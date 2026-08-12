@@ -10,6 +10,12 @@ const initialPath =
   process.env.FLIGHT_DECK_PROJECT_PATH ||
   "/Users/fangyuanzhonghe/code/Codex-Flight-Deck-Test";
 const previews = new Map();
+const defaultPolicy = () => ({
+  rules: "先阅读 AGENTS.md、README.md 与相关模块；只修改任务范围内的文件。",
+  standards: "保持现有代码风格；补充必要测试；避免无关重构。",
+  skills: [],
+  verificationCommand: "",
+});
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
@@ -25,7 +31,7 @@ function readConfig() {
   try {
     return JSON.parse(readFileSync(configFile, "utf8"));
   } catch {
-    return { activePath: initialPath, paths: [initialPath] };
+    return { activePath: initialPath, paths: [initialPath], policies: {} };
   }
 }
 function writeConfig(config) {
@@ -46,6 +52,7 @@ export function inspectProject(candidatePath) {
   const head = hasGit
     ? tryGit(["rev-parse", "--short", "HEAD"], projectRoot)
     : "";
+  const policy = readConfig().policies?.[projectRoot] || defaultPolicy();
   return {
     name: path.basename(projectRoot),
     path: projectRoot,
@@ -54,6 +61,7 @@ export function inspectProject(candidatePath) {
       : "未启用 Git",
     head,
     executionMode: hasGit && head ? "worktree" : "shared",
+    policy: { ...defaultPolicy(), ...policy },
   };
 }
 
@@ -78,8 +86,40 @@ export function addProject(candidatePath) {
   const project = inspectProject(candidatePath);
   const config = readConfig();
   const paths = [...new Set([...config.paths, project.path])];
-  writeConfig({ activePath: project.path, paths });
+  writeConfig({
+    ...config,
+    activePath: project.path,
+    paths,
+    policies: config.policies || {},
+  });
   return project;
+}
+
+export function updateProjectPolicy(candidatePath, input = {}) {
+  const project = inspectProject(candidatePath);
+  const config = readConfig();
+  if (!config.paths.includes(project.path))
+    throw new Error("请先将该仓库添加为项目。");
+  const skills = Array.isArray(input.skills)
+    ? input.skills.filter((skill) => typeof skill === "string").slice(0, 12)
+    : [];
+  const verificationCommand = `${input.verificationCommand || ""}`.trim();
+  if (
+    verificationCommand &&
+    !/^npm run [a-zA-Z0-9:_-]+$/.test(verificationCommand)
+  )
+    throw new Error("验证命令目前仅支持 npm run <script>，例如 npm run test。");
+  const policy = {
+    rules: `${input.rules || ""}`.trim().slice(0, 4000),
+    standards: `${input.standards || ""}`.trim().slice(0, 4000),
+    skills,
+    verificationCommand,
+  };
+  writeConfig({
+    ...config,
+    policies: { ...(config.policies || {}), [project.path]: policy },
+  });
+  return inspectProject(project.path);
 }
 
 export function setActiveProject(candidatePath) {
@@ -280,7 +320,7 @@ export function inspectWorkspace(workspacePath) {
   return { ...project, changedFiles, diffStat, dirty: changedFiles.length > 0 };
 }
 
-export async function runProjectVerification(workspacePath) {
+export async function runProjectVerification(workspacePath, policy = {}) {
   const packagePath = path.join(workspacePath, "package.json");
   if (!existsSync(packagePath))
     return {
@@ -300,7 +340,19 @@ export async function runProjectVerification(workspacePath) {
       output: "无法读取 package.json。",
     };
   }
-  const scriptName = ["test", "check", "build"].find((name) => scripts[name]);
+  const configuredScript = policy.verificationCommand?.match(
+    /^npm run ([a-zA-Z0-9:_-]+)$/,
+  )?.[1];
+  const scriptName =
+    configuredScript ||
+    ["test", "check", "build"].find((name) => scripts[name]);
+  if (configuredScript && !scripts[configuredScript])
+    return {
+      available: false,
+      command: policy.verificationCommand,
+      exitCode: null,
+      output: `项目规则指定了 ${policy.verificationCommand}，但 package.json 中没有该脚本。`,
+    };
   if (!scriptName)
     return {
       available: false,

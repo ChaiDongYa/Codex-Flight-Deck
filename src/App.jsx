@@ -19,6 +19,13 @@ export function App() {
   const [projects, setProjects] = useState([]);
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [policyOpen, setPolicyOpen] = useState(false);
+  const [policyDraft, setPolicyDraft] = useState({
+    rules: "",
+    standards: "",
+    skills: [],
+    verificationCommand: "",
+  });
   const [projectPath, setProjectPath] = useState("");
   const [allProjects, setAllProjects] = useState(false);
   const [view, setView] = useState("tasks");
@@ -217,6 +224,34 @@ export function App() {
         : `已创建 ${data.task.role} 任务，等待你确认计划。`,
     );
   };
+  const openPolicy = () => {
+    setPolicyDraft(
+      project?.policy || {
+        rules: "",
+        standards: "",
+        skills: [],
+        verificationCommand: "",
+      },
+    );
+    setPolicyOpen(true);
+  };
+  const savePolicy = async () => {
+    const response = await fetch("/api/projects/policy", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: project?.path, ...policyDraft }),
+    });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error);
+    setProject(data.project);
+    setProjects((items) =>
+      items.map((item) =>
+        item.path === data.project.path ? data.project : item,
+      ),
+    );
+    setPolicyOpen(false);
+    setToast("项目规则已保存；新创建的任务会使用这份规则快照。");
+  };
   const addProject = async () => {
     const response = await fetch("/api/projects", {
       method: "POST",
@@ -326,6 +361,9 @@ export function App() {
                   }}
                 >
                   + 添加项目
+                </button>
+                <button className="new-project" onClick={openPolicy}>
+                  ⚙ 项目规则与 Skills
                 </button>
               </div>
             )}
@@ -545,6 +583,22 @@ export function App() {
                       </ul>
                     )}
                   </section>
+                  {selected.projectPolicy && (
+                    <section className="policy-summary">
+                      <h3>任务使用的项目规范</h3>
+                      <p>
+                        {selected.projectPolicy.rules || "未配置额外项目规则。"}
+                      </p>
+                      {selected.projectPolicy.skills?.length > 0 && (
+                        <small>
+                          Skills：
+                          {selected.projectPolicy.skills
+                            .map((skill) => `$${skill}`)
+                            .join(" · ")}
+                        </small>
+                      )}
+                    </section>
+                  )}
                   <section>
                     <h3>
                       {selected.evidence?.workspace
@@ -1372,6 +1426,113 @@ export function App() {
                 disabled={!projectPath}
               >
                 验证并添加
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+      {policyOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="modal policy-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="policy-title"
+          >
+            <button
+              className="modal-close"
+              onClick={() => setPolicyOpen(false)}
+            >
+              ×
+            </button>
+            <div className="modal-kicker">
+              {project?.name || "当前项目"} · 执行规范
+            </div>
+            <h2 id="policy-title">项目规则与 Skills</h2>
+            <p className="description">
+              这些设置只在 Flight Deck
+              创建的新任务中生效，并会在任务创建时保存快照。
+            </p>
+            <div className="form-stack">
+              <label>
+                项目规则
+                <textarea
+                  value={policyDraft.rules}
+                  onChange={(event) =>
+                    setPolicyDraft({
+                      ...policyDraft,
+                      rules: event.target.value,
+                    })
+                  }
+                  placeholder="例如：改动接口前先检查权限；禁止修改支付结算核心目录…"
+                />
+              </label>
+              <label>
+                工程规范
+                <textarea
+                  value={policyDraft.standards}
+                  onChange={(event) =>
+                    setPolicyDraft({
+                      ...policyDraft,
+                      standards: event.target.value,
+                    })
+                  }
+                  placeholder="例如：TypeScript 严格模式；新增接口须有单测；组件遵守现有设计系统…"
+                />
+              </label>
+              <label>
+                固定验证命令（可选）
+                <input
+                  value={policyDraft.verificationCommand}
+                  onChange={(event) =>
+                    setPolicyDraft({
+                      ...policyDraft,
+                      verificationCommand: event.target.value,
+                    })
+                  }
+                  placeholder="npm run test"
+                />
+                <small>
+                  仅允许 npm run &lt;script&gt;。不填则按 test → check → build
+                  自动选择。
+                </small>
+              </label>
+              <div className="skill-picker">
+                <b>启用已安装的 Codex Skills</b>
+                <span>
+                  只会把名称和使用要求写入任务提示词，不会自动安装或执行未知
+                  Skill。
+                </span>
+                {["manage-taskboard", "dashi-ppt", "task-handoff"].map(
+                  (skill) => (
+                    <label key={skill}>
+                      <input
+                        type="checkbox"
+                        checked={policyDraft.skills.includes(skill)}
+                        onChange={() =>
+                          setPolicyDraft({
+                            ...policyDraft,
+                            skills: policyDraft.skills.includes(skill)
+                              ? policyDraft.skills.filter(
+                                  (item) => item !== skill,
+                                )
+                              : [...policyDraft.skills, skill],
+                          })
+                        }
+                      />
+                      ${skill}
+                    </label>
+                  ),
+                )}
+              </div>
+            </div>
+            <footer className="modal-actions">
+              <button className="outline" onClick={() => setPolicyOpen(false)}>
+                取消
+              </button>
+              <span></span>
+              <button className="primary" onClick={savePolicy}>
+                保存项目规则
               </button>
             </footer>
           </section>

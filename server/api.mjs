@@ -16,7 +16,12 @@ import {
   returnTask,
 } from "./db.mjs";
 import { launchCodexTask } from "./codex.mjs";
-import { addProject, listProjects, setActiveProject } from "./project.mjs";
+import {
+  addProject,
+  listProjects,
+  setActiveProject,
+  updateProjectPolicy,
+} from "./project.mjs";
 import {
   inspectWorkspace,
   mergeTaskWorktree,
@@ -38,7 +43,10 @@ async function verifyAutomatically(id) {
     task.codex?.state !== "completed"
   )
     return;
-  const verification = await runProjectVerification(task.codex.workspacePath);
+  const verification = await runProjectVerification(
+    task.codex.workspacePath,
+    task.projectPolicy,
+  );
   recordWorkspaceEvidence(task.id, inspectWorkspace(task.codex.workspacePath));
   recordVerification(task.id, verification, null);
 }
@@ -120,8 +128,19 @@ export async function api(request, response) {
       return json(response, 200, {
         project: setActiveProject((await readBody(request)).path),
       });
+    if (request.method === "PUT" && url.pathname === "/api/projects/policy")
+      return json(response, 200, {
+        project: updateProjectPolicy(await readBody(request)),
+      });
     if (request.method === "POST" && url.pathname === "/api/tasks") {
-      const task = createTask(await readBody(request));
+      const input = await readBody(request);
+      const project = listProjects().projects.find(
+        (item) => item.path === input.projectPath,
+      );
+      const task = createTask({
+        ...input,
+        projectPolicy: project?.policy || {},
+      });
       if (task.automation?.autoRun) void drainNightQueue();
       return json(response, 201, { task });
     }
@@ -166,6 +185,7 @@ export async function api(request, response) {
         });
       const verification = await runProjectVerification(
         task.codex.workspacePath,
+        task.projectPolicy,
       );
       recordWorkspaceEvidence(
         task.id,

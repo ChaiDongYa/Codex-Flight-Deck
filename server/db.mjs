@@ -219,6 +219,7 @@ export function createTask(input) {
     role,
     description: input.goal?.trim() || "等待补充交付目标。",
     projectPath: input.projectPath || "",
+    projectPolicy: input.projectPolicy || {},
     status: "待开始",
     worktree: `wt/${
       title
