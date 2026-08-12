@@ -11,16 +11,18 @@ const statusClass = {
 };
 
 function splitDiffFiles(diff = "") {
-  return (diff.match(/^diff --git [\s\S]*?(?=^diff --git |$)/gm) || []).map(
-    (section, index) => {
-      const lines = section.split("\n");
-      const match = lines[0]?.match(/^diff --git a\/(.+?) b\/(.+)$/);
-      return {
-        id: `${match?.[2] || index}-${index}`,
-        path: match?.[2] || match?.[1] || `未命名变更 ${index + 1}`,
-        lines,
-      };
-    });
+  const starts = [...diff.matchAll(/^diff --git a\/(.+?) b\/(.+)$/gm)];
+  return starts.map((match, index) => {
+    const start = match.index ?? 0;
+    const end = starts[index + 1]?.index ?? diff.length;
+    return {
+      id: `${match[2] || match[1] || index}-${index}`,
+      path: match[2] || match[1] || `未命名变更 ${index + 1}`,
+      // Slice by the next file header rather than using `$` in a multiline
+      // regex: `$` can match at the end of the first header line.
+      lines: diff.slice(start, end).replace(/\n$/, "").split("\n"),
+    };
+  });
 }
 
 function parseUnifiedDiff(lines = []) {
@@ -133,6 +135,9 @@ export function App() {
     () => parseUnifiedDiff(activeDiff?.lines),
     [activeDiff],
   );
+  useEffect(() => {
+    setActiveDiffFile(0);
+  }, [selected?.id, selected?.merge?.diff]);
   const hasRunningTask = tasks.some((task) => task.codex?.state === "running");
   const executionEvents = selected?.execution?.events || [];
 
