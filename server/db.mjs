@@ -42,10 +42,10 @@ export function createTask(input) {
   for (const dependency of input.dependencies || []) db.prepare("INSERT OR IGNORE INTO dependencies (dependent_id, prerequisite_id, gate) VALUES (?, ?, ?)").run(task.id, dependency.id, dependency.gate === "accept" ? "accept" : "test");
   return task;
 }
-export function approveTask(id) { const task = getTask(id); if (!task) throw new Error("Task not found"); if (!canRun(id)) throw new Error("任务依赖尚未满足：必须等待前置任务的验证门禁通过。"); return save({ ...task, approved: true, status: "执行中", activity: "Codex 已获准执行 · 正在准备独立 worktree", test: "等待执行", testTone: "neutral" }); }
+export function approveTask(id) { const task = getTask(id); if (!task) throw new Error("Task not found"); if (!canRun(id)) throw new Error("任务依赖尚未满足：必须等待前置任务的验证门禁通过。"); return save({ ...task, approved: true, status: "执行中", activity: "Codex 已获准执行 · 正在准备工作目录", test: "等待执行", testTone: "neutral" }); }
 export function recordCodexLaunch(id, launch) {
   const task = getTask(id); if (!task) throw new Error("Task not found");
-  return save({ ...task, approved: true, status: "执行中", worktree: launch.workspacePath, activity: `Codex 已在 ${launch.branch} 中启动`, test: "等待 Codex 完成", testTone: "neutral", codex: { ...launch, state: "running", startedAt: new Date().toISOString() } });
+  return save({ ...task, approved: true, status: "执行中", worktree: launch.workspacePath, activity: launch.isolated ? `Codex 已在 ${launch.branch} 中启动` : "Codex 已在共享工作目录中启动（未隔离）", test: "等待 Codex 完成", testTone: "neutral", codex: { ...launch, state: "running", startedAt: new Date().toISOString() } });
 }
 export function recordCodexEvent(id, event) {
   const task = getTask(id); if (!task) return null;

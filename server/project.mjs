@@ -8,6 +8,7 @@ const configFile = path.join(root, "data", "projects.json");
 const initialPath = process.env.FLIGHT_DECK_PROJECT_PATH || "/Users/fangyuanzhonghe/code/Codex-Flight-Deck-Test";
 
 function git(args, cwd) { return execFileSync("git", args, { cwd, encoding: "utf8" }).trim(); }
+function tryGit(args, cwd) { try { return git(args, cwd); } catch { return ""; } }
 function readConfig() {
   try { return JSON.parse(readFileSync(configFile, "utf8")); }
   catch { return { activePath: initialPath, paths: [initialPath] }; }
@@ -17,10 +18,14 @@ function writeConfig(config) { mkdirSync(path.dirname(configFile), { recursive: 
 export function inspectProject(candidatePath) {
   const suppliedPath = candidatePath?.trim();
   if (!suppliedPath || !existsSync(suppliedPath)) throw new Error(`项目目录不存在：${suppliedPath || "未提供路径"}`);
-  let projectRoot;
-  try { projectRoot = git(["rev-parse", "--show-toplevel"], suppliedPath); }
-  catch { throw new Error("该目录不是 Git 仓库；请先执行 git init 并至少提交一次。"); }
-  return { name: path.basename(projectRoot), path: projectRoot, branch: git(["branch", "--show-current"], projectRoot) || "detached HEAD", head: git(["rev-parse", "--short", "HEAD"], projectRoot) };
+  const projectRoot = tryGit(["rev-parse", "--show-toplevel"], suppliedPath) || path.resolve(suppliedPath);
+  const hasGit = Boolean(tryGit(["rev-parse", "--is-inside-work-tree"], suppliedPath));
+  const head = hasGit ? tryGit(["rev-parse", "--short", "HEAD"], projectRoot) : "";
+  return {
+    name: path.basename(projectRoot), path: projectRoot,
+    branch: hasGit ? (tryGit(["branch", "--show-current"], projectRoot) || "未提交") : "未启用 Git",
+    head, executionMode: hasGit && head ? "worktree" : "shared",
+  };
 }
 
 export function listProjects() {
@@ -50,11 +55,12 @@ export function getProject(candidatePath) { return inspectProject(candidatePath 
 
 export function createTaskWorktree(task) {
   const project = getProject(task.projectPath);
+  if (project.executionMode === "shared") return { ...project, branch: "共享工作目录", workspacePath: project.path, isolated: false };
   const branch = `flight-deck/${task.id.toLowerCase()}`;
   const directory = `${project.path}/.flight-deck-worktrees/${task.id}`;
   try {
     const existing = git(["worktree", "list", "--porcelain"], project.path);
     if (!existing.includes(`worktree ${directory}\n`)) execFileSync("git", ["worktree", "add", "-b", branch, directory, project.branch], { cwd: project.path, encoding: "utf8" });
   } catch (error) { throw new Error(`无法创建 Git worktree：${error.stderr?.trim() || error.message}`); }
-  return { ...project, branch, workspacePath: directory };
+  return { ...project, branch, workspacePath: directory, isolated: true };
 }

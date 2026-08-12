@@ -2,8 +2,9 @@ import { spawn } from "node:child_process";
 import { createTaskWorktree } from "./project.mjs";
 const sessions = new Map();
 
-function taskPrompt(task) {
-  return `你正在处理 Flight Deck 交付任务 ${task.id}：${task.title}\n\n目标：${task.description}\n\n实施计划：\n${task.plan.map((step, index) => `${index + 1}. ${step}`).join("\n")}\n\n验收标准：${task.acceptance || "完成范围内最小实现，并运行相关测试。"}\n\n请在当前工作区中执行任务。先检查项目约定与相关代码；只进行任务范围内的最小改动；运行可用的验证命令；最后汇报改动、测试结果和剩余风险。不要绕过沙箱或请求网络访问。`;
+function taskPrompt(task, isolated) {
+  const workspaceNotice = isolated ? "当前目录是此任务的独立 Git worktree。" : "当前目录是项目的共享工作目录：该项目尚无 Git 提交或未启用 Git。执行前检查现有改动，不要覆盖无关文件；完成后明确说明改动文件。";
+  return `你正在处理 Flight Deck 交付任务 ${task.id}：${task.title}\n\n目标：${task.description}\n\n实施计划：\n${task.plan.map((step, index) => `${index + 1}. ${step}`).join("\n")}\n\n验收标准：${task.acceptance || "完成范围内最小实现，并运行相关测试。"}\n\n${workspaceNotice}\n请在当前工作区中执行任务。先检查项目约定与相关代码；只进行任务范围内的最小改动；运行可用的验证命令；最后汇报改动、测试结果和剩余风险。不要绕过沙箱或请求网络访问。`;
 }
 
 function startServer(cwd, onNotification) {
@@ -57,10 +58,10 @@ export async function launchCodexTask(task, callbacks) {
     const startedTurn = await server.request("turn/start", {
       threadId,
       cwd: workspace.workspacePath,
-      input: [{ type: "text", text: taskPrompt(task) }],
+      input: [{ type: "text", text: taskPrompt(task, workspace.isolated) }],
     });
     sessions.set(threadId, server);
-    return { threadId, turnId: startedTurn.turn.id, workspacePath: workspace.workspacePath, branch: workspace.branch, project: workspace.name, head: workspace.head };
+    return { threadId, turnId: startedTurn.turn.id, workspacePath: workspace.workspacePath, branch: workspace.branch, project: workspace.name, head: workspace.head, isolated: workspace.isolated };
   } catch (error) {
     server.child.kill();
     throw error;
