@@ -143,6 +143,16 @@ export function App() {
       "verify",
       "已运行项目的真实验证命令，结果已写入交付证据。",
     );
+  const launchPreview = async () => {
+    const response = await fetch(`/api/tasks/${selected.id}/preview`, {
+      method: "POST",
+    });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error);
+    setTasks(data.tasks);
+    window.open(data.task.preview.url, "_blank", "noopener,noreferrer");
+    setToast(`已在任务 worktree 启动预览：${data.task.preview.url}`);
+  };
   const previewMerge = () =>
     runAction(
       selected.id,
@@ -591,6 +601,33 @@ export function App() {
                       </p>
                     )}
                   </section>
+                  {selected.codex?.workspacePath &&
+                    selected.codex?.state !== "running" && (
+                      <section className="preview-section">
+                        <div className="preview-heading">
+                          <h3>不合并预览</h3>
+                          <span>仅任务 worktree</span>
+                        </div>
+                        <p>
+                          在此任务独立目录中启动页面，不会写入或切换主项目分支。
+                        </p>
+                        {selected.preview?.url && (
+                          <a
+                            className="preview-link"
+                            href={selected.preview.url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            打开当前预览 ↗
+                          </a>
+                        )}
+                        <button className="outline" onClick={launchPreview}>
+                          {selected.preview?.url
+                            ? "重新启动预览"
+                            : "启动本地预览"}
+                        </button>
+                      </section>
+                    )}
                   <section className="timeline-section">
                     <h3>交付证据</h3>
                     <ol className="timeline">
@@ -663,7 +700,9 @@ export function App() {
                                 : "merge-state"
                             }
                           >
-                            {selected.merge?.state === "merged" ? "已合并" : "等待你确认"}
+                            {selected.merge?.state === "merged"
+                              ? "已合并"
+                              : "等待你确认"}
                           </span>
                         </div>
                         <p>
@@ -684,21 +723,25 @@ export function App() {
                                 className="outline"
                                 onClick={previewMerge}
                               >
-                                查看真实 diff
+                                {selected.merge?.state === "ready"
+                                  ? "重新生成真实 diff"
+                                  : "查看真实 diff"}
                               </button>
-                              <button
-                                className="primary success"
-                                onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      `确认将 ${selected.merge?.branch || selected.worktree} 合并到 ${selected.merge?.targetBranch || "目标分支"}？`,
+                              {selected.merge?.state === "ready" && (
+                                <button
+                                  className="primary success"
+                                  onClick={() => {
+                                    if (
+                                      window.confirm(
+                                        `确认将 ${selected.merge?.branch || selected.worktree} 合并到 ${selected.merge?.targetBranch || "目标分支"}？`,
+                                      )
                                     )
-                                  )
-                                    mergeDelivery();
-                                }}
-                              >
-                                合并到目标分支
-                              </button>
+                                      mergeDelivery();
+                                  }}
+                                >
+                                  合并到目标分支
+                                </button>
+                              )}
                             </div>
                             {selected.merge?.diffStat && (
                               <pre className="merge-stat">
@@ -1090,7 +1133,10 @@ export function App() {
                   </span>
                   <div className="merge-confirmed">
                     <strong>查看真实 diff 后由你确认合并</strong>
-                    <small>Flight Deck 不会自动合并或复制代码。目标分支有未提交改动、分支不匹配或发生冲突时会拒绝合并。</small>
+                    <small>
+                      Flight Deck
+                      不会自动合并或复制代码。目标分支有未提交改动、分支不匹配或发生冲突时会拒绝合并。
+                    </small>
                   </div>
                 </div>
                 <div className="dependency-picker">

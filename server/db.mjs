@@ -346,6 +346,11 @@ export function recordWorkspaceEvidence(id, evidence) {
       task.files,
   });
 }
+export function recordTaskPreview(id, preview) {
+  const task = getTask(id);
+  if (!task) throw new Error("Task not found");
+  return save({ ...task, preview, activity: `任务预览已启动：${preview.url}` });
+}
 export function recordMergePreview(id, preview) {
   const task = getTask(id);
   if (!task) throw new Error("Task not found");

@@ -9,6 +9,7 @@ import {
   recordCodexLaunch,
   recordMergePreview,
   recordMergeResult,
+  recordTaskPreview,
   recordVerification,
   recordWorkspaceEvidence,
   returnTask,
@@ -20,6 +21,7 @@ import {
   mergeTaskWorktree,
   prepareTaskMerge,
   runProjectVerification,
+  startTaskPreview,
 } from "./project.mjs";
 import { execFile } from "node:child_process";
 
@@ -118,14 +120,22 @@ export async function api(request, response) {
         task.id,
         inspectWorkspace(task.codex.workspacePath),
       );
-      const mergeResult =
-        verification.available &&
-        verification.exitCode === 0 &&
-        task.codex?.isolated
-          ? prepareTaskMerge(task)
-          : null;
       return json(response, 200, {
-        task: recordVerification(task.id, verification, mergeResult),
+        // Verification only moves the task into review. Preparing a merge can
+        // create a task-worktree commit, so it must be an explicit, visible
+        // "查看真实 diff" action by the user.
+        task: recordVerification(task.id, verification, null),
+        tasks: listTasks(),
+      });
+    }
+    const previewRunMatch = url.pathname.match(
+      /^\/api\/tasks\/([^/]+)\/preview$/,
+    );
+    if (request.method === "POST" && previewRunMatch) {
+      const task = getTask(previewRunMatch[1]);
+      if (!task) return json(response, 404, { error: "Task not found" });
+      return json(response, 200, {
+        task: recordTaskPreview(task.id, await startTaskPreview(task)),
         tasks: listTasks(),
       });
     }
@@ -154,6 +164,10 @@ export async function api(request, response) {
       if (task.status !== "待复核" || task.testTone !== "success")
         return json(response, 400, {
           error: "只有真实验证通过、等待复核的任务可以合并代码。",
+        });
+      if (task.merge?.state !== "ready")
+        return json(response, 400, {
+          error: "请先查看真实 diff，再确认合并到目标分支。",
         });
       return json(response, 200, {
         task: recordMergeResult(task.id, mergeTaskWorktree(task)),

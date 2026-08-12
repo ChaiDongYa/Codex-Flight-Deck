@@ -750,9 +750,31 @@ nav button span {
   font-weight: 400;
   resize: vertical;
 }
-.form-stack select { width: 100%; height: 42px; border: 1px solid #d7e0eb; border-radius: 8px; outline: 0; color: #1f2d42; background: #fff; padding: 0 11px; }
-.form-stack select:focus { border-color: #2871ea; box-shadow: 0 0 0 3px #eaf2ff; }
-.role-badge { display: inline-flex; width: fit-content; margin: 9px 0 0 !important; padding: 4px 7px; border-radius: 5px; color: #285eab !important; background: #edf4ff; font-size: 11px !important; font-weight: 700; }
+.form-stack select {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #d7e0eb;
+  border-radius: 8px;
+  outline: 0;
+  color: #1f2d42;
+  background: #fff;
+  padding: 0 11px;
+}
+.form-stack select:focus {
+  border-color: #2871ea;
+  box-shadow: 0 0 0 3px #eaf2ff;
+}
+.role-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 9px 0 0 !important;
+  padding: 4px 7px;
+  border-radius: 5px;
+  color: #285eab !important;
+  background: #edf4ff;
+  font-size: 11px !important;
+  font-weight: 700;
+}
 .form-stack input:focus,
 .form-stack textarea:focus {
   border-color: #2871ea;
@@ -940,6 +962,34 @@ nav button span {
   font-size: 11px;
   line-height: 1.4;
 }
+.preview-section {
+  background: #fbfdff;
+}
+.preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.preview-heading h3 {
+  margin-bottom: 0 !important;
+}
+.preview-heading span {
+  color: #63758d;
+  font-size: 11px;
+  font-weight: 650;
+}
+.preview-section .outline {
+  width: 100%;
+  margin-top: 13px;
+}
+.preview-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #1769e9;
+  font-size: 12px;
+  font-weight: 700;
+}
 @keyframes flight-deck-pulse {
   0% {
     box-shadow: 0 0 0 0 #1da56966;
@@ -1080,9 +1130,22 @@ nav button span {
   color: #77859a;
   line-height: 1.4;
 }
-.merge-confirmed { display: grid; gap: 4px; padding: 11px; border: 1px solid #2b72ec; border-radius: 7px; background: #f2f7ff; }
-.merge-confirmed strong { color: #34455e; font-size: 12px; }
-.merge-confirmed small { color: #63758d; line-height: 1.45; }
+.merge-confirmed {
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+  border: 1px solid #2b72ec;
+  border-radius: 7px;
+  background: #f2f7ff;
+}
+.merge-confirmed strong {
+  color: #34455e;
+  font-size: 12px;
+}
+.merge-confirmed small {
+  color: #63758d;
+  line-height: 1.45;
+}
 .merge-section {
   background: #fbfdff;
 }
