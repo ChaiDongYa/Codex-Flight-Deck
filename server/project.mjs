@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -63,4 +63,28 @@ export function createTaskWorktree(task) {
     if (!existing.includes(`worktree ${directory}\n`)) execFileSync("git", ["worktree", "add", "-b", branch, directory, project.branch], { cwd: project.path, encoding: "utf8" });
   } catch (error) { throw new Error(`无法创建 Git worktree：${error.stderr?.trim() || error.message}`); }
   return { ...project, branch, workspacePath: directory, isolated: true };
+}
+
+export function inspectWorkspace(workspacePath) {
+  const project = inspectProject(workspacePath);
+  const gitEnabled = project.executionMode === "worktree";
+  if (!gitEnabled) return { ...project, changedFiles: [], diffStat: "未启用 Git，无法生成 diff", dirty: false };
+  const changedFiles = git(["status", "--short"], workspacePath).split("\n").filter(Boolean);
+  const diffStat = git(["diff", "--stat"], workspacePath) || "没有未提交的 Git diff";
+  return { ...project, changedFiles, diffStat, dirty: changedFiles.length > 0 };
+}
+
+export async function runProjectVerification(workspacePath) {
+  const packagePath = path.join(workspacePath, "package.json");
+  if (!existsSync(packagePath)) return { available: false, command: "", exitCode: null, output: "项目未配置 package.json 测试脚本。" };
+  let scripts;
+  try { scripts = JSON.parse(readFileSync(packagePath, "utf8")).scripts || {}; } catch { return { available: false, command: "", exitCode: null, output: "无法读取 package.json。" }; }
+  const scriptName = ["test", "check", "build"].find((name) => scripts[name]);
+  if (!scriptName) return { available: false, command: "", exitCode: null, output: "未发现 package.json 中的 test、check 或 build 脚本。" };
+  const command = `npm run ${scriptName}`;
+  return new Promise((resolve) => execFile("npm", ["run", scriptName], { cwd: workspacePath, timeout: 120_000, maxBuffer: 512 * 1024 }, (error, stdout, stderr) => {
+    const exitCode = error?.code && Number.isInteger(error.code) ? error.code : error ? 1 : 0;
+    const output = `${stdout || ""}${stderr || ""}`.trim().slice(-8000) || (exitCode === 0 ? "命令执行成功，未产生输出。" : "命令执行失败，未产生输出。");
+    resolve({ available: true, command, exitCode, output });
+  }));
 }

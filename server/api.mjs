@@ -1,6 +1,7 @@
-import { acceptTask, approveTask, createTask, deleteTask, getTask, listTasks, passTests, recordCodexEvent, recordCodexLaunch, returnTask } from "./db.mjs";
+import { acceptTask, approveTask, createTask, deleteTask, getTask, listTasks, recordCodexEvent, recordCodexLaunch, recordVerification, recordWorkspaceEvidence, returnTask } from "./db.mjs";
 import { launchCodexTask } from "./codex.mjs";
 import { addProject, listProjects, setActiveProject } from "./project.mjs";
+import { inspectWorkspace, runProjectVerification } from "./project.mjs";
 import { execFile } from "node:child_process";
 
 const json = (response, status, payload) => { response.statusCode = status; response.setHeader("Content-Type", "application/json; charset=utf-8"); response.end(JSON.stringify(payload)); return true; };
@@ -29,10 +30,12 @@ export async function api(request, response) {
       const launch = await launchCodexTask(task, { onEvent: (event) => recordCodexEvent(id, event) });
       return json(response, 200, { task: recordCodexLaunch(id, launch), tasks: listTasks() });
     }
-    const match = url.pathname.match(/^\/api\/tasks\/([^/]+)\/(approve|pass-tests|accept|return)$/);
+    const verifyMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/verify$/);
+    if (request.method === "POST" && verifyMatch) { const task = getTask(verifyMatch[1]); if (!task?.codex?.workspacePath) return json(response, 400, { error: "请先完成一次 Codex 执行，才能运行真实验证。" }); const verification = await runProjectVerification(task.codex.workspacePath); recordWorkspaceEvidence(task.id, inspectWorkspace(task.codex.workspacePath)); return json(response, 200, { task: recordVerification(task.id, verification), tasks: listTasks() }); }
+    const match = url.pathname.match(/^\/api\/tasks\/([^/]+)\/(approve|accept|return)$/);
     if (request.method === "POST" && match) {
       const [, id, action] = match;
-      const actionFn = { approve: approveTask, "pass-tests": passTests, accept: acceptTask, return: returnTask }[action];
+      const actionFn = { approve: approveTask, accept: acceptTask, return: returnTask }[action];
       return json(response, 200, { task: actionFn(id), tasks: listTasks() });
     }
     if (request.method === "GET" && url.pathname.startsWith("/api/tasks/")) return json(response, 200, { task: getTask(url.pathname.split("/").pop()) });

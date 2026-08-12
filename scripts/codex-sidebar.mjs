@@ -61,6 +61,10 @@ const target = await waitForTarget();
 const cdp = await connect(target.webSocketDebuggerUrl);
 await cdp.call("Page.setBypassCSP", { enabled: true });
 await cdp.call("Page.addScriptToEvaluateOnNewDocument", { source: `window.__FLIGHT_DECK_URL__=${JSON.stringify(appUrl)};\n${script}` });
+// Codex's renderer applies its CSP after initial document creation. Reload once
+// after enabling the CDP bypass so the local Flight Deck iframe is permitted.
+await cdp.call("Page.reload", { ignoreCache: true });
+await sleep(700);
 await cdp.call("Runtime.evaluate", { expression: `window.__FLIGHT_DECK_URL__=${JSON.stringify(appUrl)};\n${script}`, awaitPromise: true });
 console.log(`Flight Deck 已注入独立 Codex 窗口（端口 ${port}）。点击 Flight Deck 即可打开。`);
 cdp.socket.close();
