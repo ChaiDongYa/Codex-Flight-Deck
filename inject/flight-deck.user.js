@@ -24,13 +24,13 @@
     #${FRAME_ID}{width:100%;height:100%;border:0;background:#fff}
     [${HIDDEN}="true"]{display:none!important}
     #${ENTRY_ID}{box-shadow:none!important}
-    #${ENTRY_ID}[data-flight-deck-active="true"]{background:var(--color-token-main-surface-secondary,rgba(127,127,127,.12))!important}
-    [data-app-action-sidebar-scroll][data-flight-deck-active="true"] :is(button,a,[role="button"]):not(#${ENTRY_ID})[aria-current="page"],
-    [data-app-action-sidebar-scroll][data-flight-deck-active="true"] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-state="active"],
-    [data-app-action-sidebar-scroll][data-flight-deck-active="true"] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-active="true"],
-    [data-app-action-sidebar-scroll][data-flight-deck-active="true"] :is(button,a,[role="button"]):not(#${ENTRY_ID})[aria-current="page"] *,
-    [data-app-action-sidebar-scroll][data-flight-deck-active="true"] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-state="active"] *,
-    [data-app-action-sidebar-scroll][data-flight-deck-active="true"] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-active="true"] *{background:transparent!important;background-color:transparent!important;box-shadow:none!important;outline:0!important}
+    #${ENTRY_ID}[data-flight-deck-active]{background:var(--color-token-main-surface-secondary,rgba(127,127,127,.12))!important}
+    [data-app-action-sidebar-scroll][data-flight-deck-active] :is(button,a,[role="button"]):not(#${ENTRY_ID})[aria-current="page"],
+    [data-app-action-sidebar-scroll][data-flight-deck-active] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-state="active"],
+    [data-app-action-sidebar-scroll][data-flight-deck-active] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-active="true"],
+    [data-app-action-sidebar-scroll][data-flight-deck-active] :is(button,a,[role="button"]):not(#${ENTRY_ID})[aria-current="page"] *,
+    [data-app-action-sidebar-scroll][data-flight-deck-active] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-state="active"] *,
+    [data-app-action-sidebar-scroll][data-flight-deck-active] :is(button,a,[role="button"]):not(#${ENTRY_ID})[data-active="true"] *{background:transparent!important;background-color:transparent!important;box-shadow:none!important;outline:0!important}
   `;
   (document.head || document.documentElement).appendChild(style);
 
