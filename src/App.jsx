@@ -54,9 +54,6 @@ export function App() {
   const worktrees = tasks.filter((task) => task.status !== "已完成");
   const reviewTasks = tasks.filter((task) => task.status === "待复核");
   return <div className="app-shell">
-    <aside className="sidebar">
-      <div className="brand">Flight Deck</div>
-    </aside>
     <section className="workspace">
       <header className="topbar"><div className="project-wrap"><button className={`project ${projectOpen ? "open" : ""}`} onClick={() => setProjectOpen((open) => !open)} aria-haspopup="menu" aria-expanded={projectOpen}><span className="project-mark"></span>{project}<span className="chevron">⌄</span></button>{projectOpen && <div className="project-menu" role="menu"><p>项目</p>{["Payments", "Storefront", "Mobile app"].map((name) => <button role="menuitem" className={project === name ? "chosen" : ""} key={name} onClick={() => { setProject(name); setProjectOpen(false); setToast(`已切换到 ${name} 项目。`); }}><span className="project-mark"></span>{name}{project === name && <b>✓</b>}</button>)}<div className="project-divider"></div><button className="new-project" onClick={() => { setProjectOpen(false); setToast("新项目创建器将在下一版加入。"); }}>+ 添加项目</button></div>}</div><label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任务…" /></label></header>
       {view === "tasks" && <main className="content">
