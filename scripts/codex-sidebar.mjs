@@ -49,6 +49,6 @@ const target = await waitForTarget();
 const cdp = await connect(target.webSocketDebuggerUrl);
 await cdp.call("Page.setBypassCSP", { enabled: true });
 await cdp.call("Page.addScriptToEvaluateOnNewDocument", { source: `window.__FLIGHT_DECK_URL__=${JSON.stringify(appUrl)};\n${script}` });
-await cdp.call("Runtime.evaluate", { expression: `window.__FLIGHT_DECK_URL__=${JSON.stringify(appUrl)};\n${script}`, awaitPromise: true });
-console.log(`Flight Deck 已注入 Codex 侧栏（端口 ${port}）。点击 Flight Deck 即可打开。`);
+await cdp.call("Page.reload", { ignoreCache: true });
+console.log(`Flight Deck 已注入 Codex 侧栏（端口 ${port}）。Codex 窗口会重载一次；重载后点击 Flight Deck 即可打开。`);
 cdp.socket.close();
