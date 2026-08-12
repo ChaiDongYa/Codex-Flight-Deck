@@ -1,17 +1,14 @@
 import { spawn } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+import { createTaskWorktree } from "./project.mjs";
 const sessions = new Map();
 
 function taskPrompt(task) {
   return `你正在处理 Flight Deck 交付任务 ${task.id}：${task.title}\n\n目标：${task.description}\n\n实施计划：\n${task.plan.map((step, index) => `${index + 1}. ${step}`).join("\n")}\n\n验收标准：${task.acceptance || "完成范围内最小实现，并运行相关测试。"}\n\n请在当前工作区中执行任务。先检查项目约定与相关代码；只进行任务范围内的最小改动；运行可用的验证命令；最后汇报改动、测试结果和剩余风险。不要绕过沙箱或请求网络访问。`;
 }
 
-function startServer(onNotification) {
+function startServer(cwd, onNotification) {
   const child = spawn("codex", ["app-server", "--stdio"], {
-    cwd: projectRoot,
+    cwd,
     stdio: ["pipe", "pipe", "pipe"],
     env: { ...process.env },
   });
@@ -46,11 +43,12 @@ function startServer(onNotification) {
 }
 
 export async function launchCodexTask(task, callbacks) {
-  const server = startServer((event) => callbacks.onEvent?.(event));
+  const workspace = createTaskWorktree(task);
+  const server = startServer(workspace.workspacePath, (event) => callbacks.onEvent?.(event));
   try {
     await server.request("initialize", { clientInfo: { name: "flight-deck", version: "0.1.0" } });
     const startedThread = await server.request("thread/start", {
-      cwd: projectRoot,
+      cwd: workspace.workspacePath,
       sandbox: "workspace-write",
       approvalPolicy: "never",
       approvalsReviewer: "user",
@@ -58,11 +56,11 @@ export async function launchCodexTask(task, callbacks) {
     const threadId = startedThread.thread.id;
     const startedTurn = await server.request("turn/start", {
       threadId,
-      cwd: projectRoot,
+      cwd: workspace.workspacePath,
       input: [{ type: "text", text: taskPrompt(task) }],
     });
     sessions.set(threadId, server);
-    return { threadId, turnId: startedTurn.turn.id, workspacePath: projectRoot };
+    return { threadId, turnId: startedTurn.turn.id, workspacePath: workspace.workspacePath, branch: workspace.branch, project: workspace.name, head: workspace.head };
   } catch (error) {
     server.child.kill();
     throw error;

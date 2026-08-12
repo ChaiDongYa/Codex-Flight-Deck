@@ -25,11 +25,10 @@ const statusClass = { "待开始": "ready", "计划中": "planning", "执行中"
 
 export function App() {
   const [tasks, setTasks] = useState([]);
-  const [selectedId, setSelectedId] = useState(initialTasks[0].id);
+  const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("全部");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [projectOpen, setProjectOpen] = useState(false);
-  const [project, setProject] = useState("Payments");
+  const [project, setProject] = useState(null);
   const [view, setView] = useState("tasks");
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerStep, setComposerStep] = useState(1);
@@ -38,11 +37,11 @@ export function App() {
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [launching, setLaunching] = useState(false);
-  const selected = tasks.find((task) => task.id === selectedId) ?? initialTasks[0];
+  const selected = tasks.find((task) => task.id === selectedId) ?? tasks[0];
   const visibleTasks = useMemo(() => tasks.filter((task) => (filter === "全部" || task.status === filter) && `${task.title} ${task.id}`.toLowerCase().includes(query.toLowerCase())), [tasks, filter, query]);
 
   const refreshTasks = async () => { const response = await fetch("/api/tasks"); const data = await response.json(); setTasks(data.tasks); if (data.tasks.length && !data.tasks.some((task) => task.id === selectedId)) setSelectedId(data.tasks[0].id); };
-  useEffect(() => { refreshTasks().catch(() => setToast("无法读取本地 SQLite 数据库。")); }, []);
+  useEffect(() => { refreshTasks().catch(() => setToast("无法读取本地 SQLite 数据库。")); fetch("/api/project").then((response) => response.json()).then((data) => setProject(data.project)).catch(() => setToast("无法读取真实 Git 项目。")); }, []);
   const runAction = async (id, action, success) => { const response = await fetch(`/api/tasks/${id}/${action}`, { method: "POST" }); const data = await response.json(); if (!response.ok) { setToast(data.error); return false; } setTasks(data.tasks); setToast(success); return true; };
   const approvePlan = () => runAction(selected.id, "approve", "计划已批准，任务将在独立 worktree 中执行。");
   const launchTask = async () => { setLaunching(true); const response = await fetch(`/api/tasks/${selected.id}/launch`, { method: "POST" }); const data = await response.json(); setLaunching(false); if (!response.ok) return setToast(data.error); setTasks(data.tasks); setToast(`Codex 已启动 · 会话 ${data.task.codex.threadId.slice(0, 8)}`); };
@@ -55,7 +54,7 @@ export function App() {
   const reviewTasks = tasks.filter((task) => task.status === "待复核");
   return <div className="app-shell">
     <section className="workspace">
-      <header className="topbar"><div className="project-wrap"><button className={`project ${projectOpen ? "open" : ""}`} onClick={() => setProjectOpen((open) => !open)} aria-haspopup="menu" aria-expanded={projectOpen}><span className="project-mark"></span>{project}<span className="chevron">⌄</span></button>{projectOpen && <div className="project-menu" role="menu"><p>项目</p>{["Payments", "Storefront", "Mobile app"].map((name) => <button role="menuitem" className={project === name ? "chosen" : ""} key={name} onClick={() => { setProject(name); setProjectOpen(false); setToast(`已切换到 ${name} 项目。`); }}><span className="project-mark"></span>{name}{project === name && <b>✓</b>}</button>)}<div className="project-divider"></div><button className="new-project" onClick={() => { setProjectOpen(false); setToast("新项目创建器将在下一版加入。"); }}>+ 添加项目</button></div>}</div><label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任务…" /></label></header>
+      <header className="topbar"><div className="project-wrap"><div className="project" title={project?.path}><span className="project-mark"></span>{project ? project.name : "正在读取 Git 项目…"}<small>{project?.branch ? ` · ${project.branch}` : ""}</small></div></div><label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任务…" /></label></header>
       {view === "tasks" && <main className="content">
         <section className="task-list">
           <div className="list-heading"><div><h1>任务 <span>{tasks.length}</span></h1><p>把需求变成可验证的 Codex 交付。</p></div><div className="filter-wrap"><button className={`filter-trigger ${filterOpen ? "open" : ""}`} onClick={() => setFilterOpen((open) => !open)} aria-haspopup="menu" aria-expanded={filterOpen}><span className={filter === "全部" ? "filter-dot all" : `filter-dot ${statusClass[filter]}`}></span>{filter === "全部" ? "全部状态" : filter}<span className="chevron">⌄</span></button>{filterOpen && <div className="filter-menu" role="menu">{["全部", "待开始", "计划中", "执行中", "待复核", "已阻塞"].map((option) => <button role="menuitem" key={option} className={filter === option ? "chosen" : ""} onClick={() => { setFilter(option); setFilterOpen(false); }}><span className={option === "全部" ? "filter-dot all" : `filter-dot ${statusClass[option]}`}></span>{option === "全部" ? "全部状态" : option}{filter === option && <b>✓</b>}</button>)}</div>}</div></div>

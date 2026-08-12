@@ -1,5 +1,6 @@
 import { acceptTask, approveTask, createTask, getTask, listTasks, passTests, recordCodexEvent, recordCodexLaunch, returnTask } from "./db.mjs";
 import { launchCodexTask } from "./codex.mjs";
+import { getProject } from "./project.mjs";
 
 const json = (response, status, payload) => { response.statusCode = status; response.setHeader("Content-Type", "application/json; charset=utf-8"); response.end(JSON.stringify(payload)); return true; };
 const readBody = (request) => new Promise((resolve, reject) => { let data = ""; request.on("data", (chunk) => data += chunk); request.on("end", () => { try { resolve(data ? JSON.parse(data) : {}); } catch (error) { reject(error); } }); request.on("error", reject); });
@@ -9,6 +10,7 @@ export async function api(request, response) {
   if (!url.pathname.startsWith("/api/")) return false;
   try {
     if (request.method === "GET" && url.pathname === "/api/tasks") return json(response, 200, { tasks: listTasks() });
+    if (request.method === "GET" && url.pathname === "/api/project") return json(response, 200, { project: getProject() });
     if (request.method === "POST" && url.pathname === "/api/tasks") return json(response, 201, { task: createTask(await readBody(request)) });
     const launchMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/launch$/);
     if (request.method === "POST" && launchMatch) {
