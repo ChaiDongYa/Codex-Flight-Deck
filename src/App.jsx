@@ -24,6 +24,7 @@ export function App() {
   const [view, setView] = useState("tasks");
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerStep, setComposerStep] = useState(1);
+  const [quickMode, setQuickMode] = useState(false);
   const [draft, setDraft] = useState({
     title: "",
     goal: "",
@@ -32,6 +33,7 @@ export function App() {
     context: "支付 API、现有测试与项目约定",
     dependencies: [],
     mergeMode: "manual",
+    automation: { autoRun: false, autoVerify: false },
   });
   const [reviewDetail, setReviewDetail] = useState(null);
   const [query, setQuery] = useState("");
@@ -206,8 +208,14 @@ export function App() {
       context: "支付 API、现有测试与项目约定",
       dependencies: [],
       mergeMode: "manual",
+      automation: { autoRun: false, autoVerify: false },
     });
-    setToast(`已创建 ${data.task.role} 任务，等待你确认计划。`);
+    setQuickMode(false);
+    setToast(
+      data.task.automation?.autoRun
+        ? `已加入夜间自动队列：${data.task.title}`
+        : `已创建 ${data.task.role} 任务，等待你确认计划。`,
+    );
   };
   const addProject = async () => {
     const response = await fetch("/api/projects", {
@@ -370,8 +378,22 @@ export function App() {
                 </div>
                 <div className="list-actions">
                   <button
+                    className="outline quick-delivery"
+                    onClick={() => {
+                      setQuickMode(true);
+                      setComposerStep(1);
+                      setComposerOpen(true);
+                    }}
+                  >
+                    ⚡ 快速任务
+                  </button>
+                  <button
                     className="primary create-delivery"
-                    onClick={() => setComposerOpen(true)}
+                    onClick={() => {
+                      setQuickMode(false);
+                      setComposerStep(1);
+                      setComposerOpen(true);
+                    }}
                   >
                     + 新建交付
                   </button>
@@ -512,9 +534,16 @@ export function App() {
                   <section>
                     <h3>摘要</h3>
                     <p>
-                      此任务包会把关键上下文、实施计划与验证证据集中在一起，方便你确认
-                      Codex 的执行边界。
+                      {selected.summary?.headline ||
+                        "尚未产生交付摘要；启动后会汇总执行、验证与变更。"}
                     </p>
+                    {selected.summary?.details?.length > 0 && (
+                      <ul className="delivery-summary">
+                        {selected.summary.details.map((detail) => (
+                          <li key={detail}>✓ {detail}</li>
+                        ))}
+                      </ul>
+                    )}
                   </section>
                   <section>
                     <h3>
@@ -681,7 +710,9 @@ export function App() {
                           </b>
                           <span>
                             {dependency.satisfied
-                              ? "门禁已满足，可以执行"
+                              ? dependency.gate === "trust"
+                                ? "已完全信任前置任务，自动队列可以启动"
+                                : "门禁已满足，可以执行"
                               : `等待 ${dependency.gate === "accept" ? "人工验收" : "测试通过"} · 当前：${dependency.task.test}`}
                           </span>
                         </div>
@@ -1029,21 +1060,29 @@ export function App() {
           >
             <button
               className="modal-close"
-              onClick={() => setComposerOpen(false)}
+              onClick={() => {
+                setComposerOpen(false);
+                setQuickMode(false);
+                setComposerStep(1);
+              }}
             >
               ×
             </button>
             <div className="modal-kicker">
-              新建交付 · 第 {composerStep}/3 步
+              {quickMode
+                ? "快速任务 · 一步创建"
+                : `新建交付 · 第 ${composerStep}/3 步`}
             </div>
             <h2 id="composer-title">
-              {composerStep === 1
-                ? "先说清你想交付什么"
-                : composerStep === 2
-                  ? "定义怎么判断完成"
-                  : "确认上下文与交付方式"}
+              {quickMode
+                ? "用一句话交给 Codex"
+                : composerStep === 1
+                  ? "先说清你想交付什么"
+                  : composerStep === 2
+                    ? "定义怎么判断完成"
+                    : "确认上下文与交付方式"}
             </h2>
-            {composerStep === 1 && (
+            {(composerStep === 1 || quickMode) && (
               <div className="form-stack">
                 <label>
                   交付名称
@@ -1089,6 +1128,27 @@ export function App() {
                     placeholder="描述用户问题、预期行为与边界…"
                   />
                 </label>
+                {quickMode && (
+                  <label className="automation-switch">
+                    <input
+                      type="checkbox"
+                      checked={draft.automation.autoRun}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          automation: {
+                            autoRun: event.target.checked,
+                            autoVerify: event.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <span>
+                      <b>加入夜间自动队列</b>
+                      <small>Codex 完成后自动验证；不会自动合并或验收。</small>
+                    </span>
+                  </label>
+                )}
               </div>
             )}
             {composerStep === 2 && (
@@ -1139,9 +1199,30 @@ export function App() {
                     </small>
                   </div>
                 </div>
+                <label className="automation-switch">
+                  <input
+                    type="checkbox"
+                    checked={draft.automation.autoRun}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        automation: {
+                          autoRun: event.target.checked,
+                          autoVerify: event.target.checked,
+                        },
+                      })
+                    }
+                  />
+                  <span>
+                    <b>夜间自动执行与验证</b>
+                    <small>
+                      依赖满足后自动启动；完成后自动运行项目验证。不会自动合并或人工验收。
+                    </small>
+                  </span>
+                </label>
                 <div className="dependency-picker">
                   <b>依赖门禁（可选）</b>
-                  <span>选择后，新任务会等待前置任务测试通过才可启动。</span>
+                  <span>选择每项任务后，再决定 B 要等待 A 的哪一级结果。</span>
                   {tasks
                     .filter((task) => task.status !== "已完成")
                     .map((task) => (
@@ -1169,6 +1250,39 @@ export function App() {
                         />
                         {task.id} · {task.title}
                         <em>{task.test}</em>
+                        {draft.dependencies.some(
+                          (dependency) => dependency.id === task.id,
+                        ) && (
+                          <select
+                            aria-label={`${task.title} 的依赖策略`}
+                            value={
+                              draft.dependencies.find(
+                                (dependency) => dependency.id === task.id,
+                              )?.gate || "test"
+                            }
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) =>
+                              setDraft({
+                                ...draft,
+                                dependencies: draft.dependencies.map(
+                                  (dependency) =>
+                                    dependency.id === task.id
+                                      ? {
+                                          ...dependency,
+                                          gate: event.target.value,
+                                        }
+                                      : dependency,
+                                ),
+                              })
+                            }
+                          >
+                            <option value="test">验证通过后手动启动 B</option>
+                            <option value="trust">
+                              完全信任 A：通过即自动启动 B
+                            </option>
+                            <option value="accept">等待人工验收</option>
+                          </select>
+                        )}
                       </label>
                     ))}
                 </div>
@@ -1190,7 +1304,11 @@ export function App() {
                 </button>
               )}
               <span></span>
-              {composerStep < 3 ? (
+              {quickMode ? (
+                <button className="primary" onClick={createDelivery}>
+                  创建并{draft.automation.autoRun ? "加入夜间队列" : "等待启动"}
+                </button>
+              ) : composerStep < 3 ? (
                 <button
                   className="primary"
                   onClick={() => setComposerStep((step) => step + 1)}

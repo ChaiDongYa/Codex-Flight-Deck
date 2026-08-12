@@ -4,6 +4,7 @@ import {
   createTask,
   deleteTask,
   getTask,
+  listAutoRunnableTasks,
   listTasks,
   recordCodexEvent,
   recordCodexLaunch,
@@ -24,6 +25,51 @@ import {
   startTaskPreview,
 } from "./project.mjs";
 import { execFile } from "node:child_process";
+
+const launchingAutomatically = new Set();
+
+async function verifyAutomatically(id) {
+  const task = listTasks().find((item) => item.id === id);
+  const trustedChain = task?.dependencies?.some(
+    (dependency) => dependency.gate === "trust",
+  );
+  if (
+    (!task?.automation?.autoVerify && !trustedChain) ||
+    task.codex?.state !== "completed"
+  )
+    return;
+  const verification = await runProjectVerification(task.codex.workspacePath);
+  recordWorkspaceEvidence(task.id, inspectWorkspace(task.codex.workspacePath));
+  recordVerification(task.id, verification, null);
+}
+
+async function launchTask(id) {
+  const task = listTasks().find((item) => item.id === id);
+  if (!task || !["待开始", "计划中"].includes(task.status) || !task.canRun)
+    return null;
+  if (launchingAutomatically.has(id)) return null;
+  launchingAutomatically.add(id);
+  try {
+    const launch = await launchCodexTask(task, {
+      onEvent: (event) => {
+        recordCodexEvent(id, event);
+        if (event.method === "turn/completed") {
+          void verifyAutomatically(id)
+            .then(drainNightQueue)
+            .catch(() => {});
+        }
+      },
+    });
+    return recordCodexLaunch(id, launch);
+  } finally {
+    launchingAutomatically.delete(id);
+  }
+}
+
+async function drainNightQueue() {
+  const candidates = listAutoRunnableTasks();
+  await Promise.allSettled(candidates.map((task) => launchTask(task.id)));
+}
 
 const json = (response, status, payload) => {
   response.statusCode = status;
@@ -74,8 +120,11 @@ export async function api(request, response) {
       return json(response, 200, {
         project: setActiveProject((await readBody(request)).path),
       });
-    if (request.method === "POST" && url.pathname === "/api/tasks")
-      return json(response, 201, { task: createTask(await readBody(request)) });
+    if (request.method === "POST" && url.pathname === "/api/tasks") {
+      const task = createTask(await readBody(request));
+      if (task.automation?.autoRun) void drainNightQueue();
+      return json(response, 201, { task });
+    }
     const deleteMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
     if (request.method === "DELETE" && deleteMatch) {
       deleteTask(deleteMatch[1]);
@@ -94,11 +143,13 @@ export async function api(request, response) {
         return json(response, 400, {
           error: "这个任务已有正在执行的 Codex 会话。",
         });
-      const launch = await launchCodexTask(task, {
-        onEvent: (event) => recordCodexEvent(id, event),
-      });
+      const launch = await launchTask(id);
+      if (!launch)
+        return json(response, 400, {
+          error: "当前任务尚不能启动；请检查状态与前置依赖。",
+        });
       return json(response, 200, {
-        task: recordCodexLaunch(id, launch),
+        task: launch,
         tasks: listTasks(),
       });
     }
@@ -120,11 +171,13 @@ export async function api(request, response) {
         task.id,
         inspectWorkspace(task.codex.workspacePath),
       );
+      const verifiedTask = recordVerification(task.id, verification, null);
+      void drainNightQueue();
       return json(response, 200, {
         // Verification only moves the task into review. Preparing a merge can
         // create a task-worktree commit, so it must be an explicit, visible
         // "查看真实 diff" action by the user.
-        task: recordVerification(task.id, verification, null),
+        task: verifiedTask,
         tasks: listTasks(),
       });
     }

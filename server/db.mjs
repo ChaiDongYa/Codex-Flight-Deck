@@ -69,6 +69,30 @@ function dependencyInfo(taskId) {
 function canRun(taskId) {
   return dependencyInfo(taskId).every((dependency) => dependency.satisfied);
 }
+function hasTrustedDependency(taskId) {
+  return dependencyInfo(taskId).some(
+    (dependency) => dependency.gate === "trust" && dependency.satisfied,
+  );
+}
+function deliverySummary(task) {
+  const verification = task.evidence?.verification;
+  const changedFiles = task.evidence?.workspace?.changedFiles || [];
+  const parts = [];
+  if (verification?.exitCode === 0)
+    parts.push(`验证通过：${verification.command}`);
+  else if (verification)
+    parts.push(`验证未通过：${verification.command || "未配置命令"}`);
+  else parts.push("尚未运行验证");
+  if (changedFiles.length) parts.push(`变更 ${changedFiles.length} 个文件`);
+  if (task.preview?.url) parts.push(`预览：${task.preview.url}`);
+  if (task.merge?.state === "merged")
+    parts.push(`已合并到 ${task.merge.targetBranch}`);
+  return {
+    headline: parts[0],
+    details: parts.slice(1),
+    ready: task.status === "待复核",
+  };
+}
 function shortText(value, limit = 220) {
   if (typeof value !== "string") return "";
   const compact = value.replace(/\s+/g, " ").trim();
@@ -153,9 +177,21 @@ function releaseDependents(prerequisiteId) {
       save({
         ...task,
         status: "待开始",
-        activity: "依赖已验证，可批准计划并启动",
+        activity: task.automation?.autoRun
+          ? "依赖已满足，夜间自动队列准备启动"
+          : "依赖已验证，可批准计划并启动",
       });
   }
+}
+
+export function listAutoRunnableTasks() {
+  return listTasks().filter(
+    (task) =>
+      (task.automation?.autoRun || hasTrustedDependency(task.id)) &&
+      task.canRun &&
+      ["待开始", "计划中"].includes(task.status) &&
+      task.codex?.state !== "running",
+  );
 }
 
 export function getTask(id) {
@@ -170,6 +206,7 @@ export function listTasks() {
       ...task,
       dependencies: dependencyInfo(task.id),
       canRun: canRun(task.id),
+      summary: deliverySummary(task),
     }));
 }
 export function createTask(input) {
@@ -199,6 +236,10 @@ export function createTask(input) {
       "运行验收标准要求的验证",
     ],
     approved: false,
+    automation: {
+      autoRun: Boolean(input.automation?.autoRun),
+      autoVerify: Boolean(input.automation?.autoVerify),
+    },
     acceptance: input.acceptance || "",
     merge: {
       mode: input.mergeMode === "auto" ? "auto" : "manual",
@@ -216,7 +257,9 @@ export function createTask(input) {
     ).run(
       task.id,
       dependency.id,
-      dependency.gate === "accept" ? "accept" : "test",
+      ["accept", "test", "trust"].includes(dependency.gate)
+        ? dependency.gate
+        : "test",
     );
   return task;
 }

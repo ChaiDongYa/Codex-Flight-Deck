@@ -281,6 +281,56 @@ nav button span {
   padding: 7px 4px;
   outline: 0;
 }
+.quick-delivery {
+  height: 35px;
+  padding: 0 11px;
+  color: #155fca;
+  border-color: #c7d9f4;
+}
+.delivery-summary {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #4c5e75;
+  font-size: 12px;
+}
+.automation-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d8e3f3;
+  border-radius: 8px;
+  background: #f7fbff;
+}
+.automation-switch input {
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: #1968ec;
+}
+.automation-switch span {
+  display: grid;
+  gap: 3px;
+  color: #31435c;
+}
+.automation-switch small {
+  color: #6f7f94;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.dependency-picker label select {
+  width: 100%;
+  height: 32px;
+  margin-top: 7px;
+  padding: 0 8px;
+  border: 1px solid #d7e1ee;
+  border-radius: 6px;
+  color: #43556d;
+  background: #fff;
+}
 .filter-wrap {
   position: relative;
 }
