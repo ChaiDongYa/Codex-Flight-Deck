@@ -81,7 +81,7 @@ export function App() {
           (allProjects || task.projectPath === project?.path) &&
           (filter === "全部" || task.status === filter) &&
           (!onlyActionable ||
-            ["待开始", "待复核", "已阻塞"].includes(task.status)) &&
+            ["待开始", "计划中", "待复核", "已阻塞"].includes(task.status)) &&
           `${task.title} ${task.id}`
             .toLowerCase()
             .includes(query.toLowerCase()),
@@ -587,6 +587,7 @@ export function App() {
                   <button
                     className={`outline actionable-filter ${onlyActionable ? "active" : ""}`}
                     onClick={() => setOnlyActionable((value) => !value)}
+                    title="显示待开始、计划中、待复核和已阻塞的任务"
                   >
                     仅看待我处理
                   </button>
