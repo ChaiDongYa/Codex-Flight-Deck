@@ -13,6 +13,16 @@ npm run dev
 
 打开 `http://127.0.0.1:4173/`。
 
+## 嵌入 Codex
+
+保持本地服务运行后，执行：
+
+```bash
+npm run codex:sidebar
+```
+
+它会启动一个带专用调试端口的 Codex 窗口，并在左侧栏新增 **Flight Deck**。点击入口即可在 Codex 主工作区中打开面板。
+
 ## 当前 MVP 能力
 
 - SQLite 本地持久化任务、状态和依赖关系
