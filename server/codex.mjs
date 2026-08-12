@@ -4,7 +4,7 @@ const sessions = new Map();
 
 function taskPrompt(task, isolated) {
   const workspaceNotice = isolated ? "当前目录是此任务的独立 Git worktree。" : "当前目录是项目的共享工作目录：该项目尚无 Git 提交或未启用 Git。执行前检查现有改动，不要覆盖无关文件；完成后明确说明改动文件。";
-  return `你正在处理 Flight Deck 交付任务 ${task.id}：${task.title}\n\n目标：${task.description}\n\n实施计划：\n${task.plan.map((step, index) => `${index + 1}. ${step}`).join("\n")}\n\n验收标准：${task.acceptance || "完成范围内最小实现，并运行相关测试。"}\n\n${workspaceNotice}\n请在当前工作区中执行任务。先检查项目约定与相关代码；只进行任务范围内的最小改动；运行可用的验证命令；最后汇报改动、测试结果和剩余风险。不要绕过沙箱或请求网络访问。`;
+  return `你正在处理 Flight Deck 交付任务 ${task.id}：${task.title}\n\n目标：${task.description}\n\n实施计划：\n${task.plan.map((step, index) => `${index + 1}. ${step}`).join("\n")}\n\n验收标准：${task.acceptance || "完成范围内最小实现，并运行相关测试。"}\n\n${workspaceNotice}\n请在当前工作区中执行任务。先检查项目约定与相关代码；只进行任务范围内的最小改动。若任务创建或修改了 package.json，必须先确认依赖已安装（优先使用项目锁文件对应的 install/ci 命令），再运行 build/test；不得把缺少 node_modules 导致的模块解析失败当作业务验证结果。最后汇报改动、依赖准备、测试结果和剩余风险。不要绕过沙箱或请求网络访问。`;
 }
 
 function startServer(cwd, onNotification) {

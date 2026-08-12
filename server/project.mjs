@@ -85,6 +85,7 @@ export async function runProjectVerification(workspacePath) {
   return new Promise((resolve) => execFile("npm", ["run", scriptName], { cwd: workspacePath, timeout: 120_000, maxBuffer: 512 * 1024 }, (error, stdout, stderr) => {
     const exitCode = error?.code && Number.isInteger(error.code) ? error.code : error ? 1 : 0;
     const output = `${stdout || ""}${stderr || ""}`.trim().slice(-8000) || (exitCode === 0 ? "命令执行成功，未产生输出。" : "命令执行失败，未产生输出。");
-    resolve({ available: true, command, exitCode, output });
+    const missingDependency = /failed to resolve import|cannot find module|module not found/i.test(output) && /react|node_modules|package/i.test(output);
+    resolve({ available: true, command, exitCode, output, missingDependency, guidance: missingDependency ? "当前 worktree 的项目依赖尚未准备。请在该 worktree 中执行 npm install（或使用锁文件对应的 npm ci），然后重新运行验证。" : "" });
   }));
 }
