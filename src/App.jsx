@@ -10,6 +10,19 @@ const statusClass = {
   等待依赖: "blocked",
 };
 
+function splitDiffFiles(diff = "") {
+  return (diff.match(/^diff --git [\s\S]*?(?=^diff --git |$)/gm) || []).map(
+    (section, index) => {
+      const lines = section.split("\n");
+      const match = lines[0]?.match(/^diff --git a\/(.+?) b\/(.+)$/);
+      return {
+        id: `${match?.[2] || index}-${index}`,
+        path: match?.[2] || match?.[1] || `未命名变更 ${index + 1}`,
+        lines,
+      };
+    });
+}
+
 export function App() {
   const [tasks, setTasks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -43,6 +56,8 @@ export function App() {
     automation: { autoRun: false, autoVerify: false },
   });
   const [reviewDetail, setReviewDetail] = useState(null);
+  const [diffReviewOpen, setDiffReviewOpen] = useState(false);
+  const [activeDiffFile, setActiveDiffFile] = useState(0);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [launching, setLaunching] = useState(false);
@@ -71,6 +86,10 @@ export function App() {
     [tasks, filter, query, allProjects, project],
   );
   const selected = visibleTasks.find((task) => task.id === selectedId) ?? null;
+  const diffFiles = useMemo(
+    () => splitDiffFiles(selected?.merge?.diff),
+    [selected?.merge?.diff],
+  );
   const hasRunningTask = tasks.some((task) => task.codex?.state === "running");
   const executionEvents = selected?.execution?.events || [];
 
@@ -195,12 +214,17 @@ export function App() {
     window.open(data.task.preview.url, "_blank", "noopener,noreferrer");
     setToast(`已在任务 worktree 启动预览：${data.task.preview.url}`);
   };
-  const previewMerge = () =>
-    runAction(
+  const previewMerge = async () => {
+    const success = await runAction(
       selected.id,
       "merge-preview",
       "已生成真实 Git diff；确认后可合并到目标分支。",
     );
+    if (success) {
+      setActiveDiffFile(0);
+      setDiffReviewOpen(true);
+    }
+  };
   const mergeDelivery = () =>
     runAction(
       selected.id,
@@ -873,11 +897,16 @@ export function App() {
                             <div className="merge-actions">
                               <button
                                 className="outline"
-                                onClick={previewMerge}
+                                onClick={() => {
+                                  if (selected.merge?.state === "ready") {
+                                    setActiveDiffFile(0);
+                                    setDiffReviewOpen(true);
+                                  } else previewMerge();
+                                }}
                               >
                                 {selected.merge?.state === "ready"
-                                  ? "重新生成真实 diff"
-                                  : "查看真实 diff"}
+                                  ? "查看变更"
+                                  : "生成变更审阅"}
                               </button>
                               {selected.merge?.state === "ready" && (
                                 <button
@@ -896,15 +925,9 @@ export function App() {
                               )}
                             </div>
                             {selected.merge?.diffStat && (
-                              <pre className="merge-stat">
-                                {selected.merge.diffStat}
-                              </pre>
-                            )}
-                            {selected.merge?.diff && (
-                              <details className="merge-diff" open>
-                                <summary>变更内容</summary>
-                                <pre>{selected.merge.diff}</pre>
-                              </details>
+                              <small className="merge-summary">
+                                {selected.merge.diffStat.split("\n").at(-1)}
+                              </small>
                             )}
                           </>
                         )}
@@ -939,10 +962,18 @@ export function App() {
                       <>
                         {selected.codex?.isolated &&
                           selected.merge?.state !== "merged" && (
-                            <button className="primary" onClick={previewMerge}>
+                            <button
+                              className="primary"
+                              onClick={() => {
+                                if (selected.merge?.state === "ready") {
+                                  setActiveDiffFile(0);
+                                  setDiffReviewOpen(true);
+                                } else previewMerge();
+                              }}
+                            >
                               {selected.merge?.diff
-                                ? "重新生成真实 diff"
-                                : "查看真实 diff"}
+                                ? "查看变更"
+                                : "生成变更审阅"}
                             </button>
                           )}
                         {selected.codex?.isolated &&
@@ -1199,6 +1230,99 @@ export function App() {
           </main>
         )}
       </section>
+      {diffReviewOpen && selected?.merge?.diff && (
+        <div className="modal-backdrop diff-backdrop" role="presentation">
+          <section
+            className="modal diff-review-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="diff-review-title"
+          >
+            <button
+              className="modal-close"
+              onClick={() => setDiffReviewOpen(false)}
+              aria-label="关闭变更审阅"
+            >
+              ×
+            </button>
+            <header className="diff-review-header">
+              <div>
+                <div className="modal-kicker">真实 Git diff · 合并前审阅</div>
+                <h2 id="diff-review-title">{selected.title}</h2>
+                <p>
+                  {selected.merge?.diffStat.split("\n").at(-1) ||
+                    "已生成变更"}
+                </p>
+              </div>
+              <span className="merge-state">等待你确认</span>
+            </header>
+            <div className="diff-review-body">
+              <nav className="diff-file-list" aria-label="变更文件">
+                <b>变更文件</b>
+                {diffFiles.map((file, index) => {
+                  const additions = file.lines.filter(
+                    (line) => line.startsWith("+") && !line.startsWith("+++"),
+                  ).length;
+                  const deletions = file.lines.filter(
+                    (line) => line.startsWith("-") && !line.startsWith("---"),
+                  ).length;
+                  return (
+                    <button
+                      className={activeDiffFile === index ? "active" : ""}
+                      key={file.id}
+                      onClick={() => setActiveDiffFile(index)}
+                    >
+                      <span>{file.path}</span>
+                      <small>
+                        {additions > 0 && <i className="diff-add">+{additions}</i>}
+                        {deletions > 0 && <i className="diff-del">−{deletions}</i>}
+                      </small>
+                    </button>
+                  );
+                })}
+              </nav>
+              <div className="diff-code" aria-label="代码变更">
+                {(diffFiles[activeDiffFile]?.lines || []).map((line, index) => {
+                  const type = line.startsWith("+") && !line.startsWith("+++")
+                    ? "addition"
+                    : line.startsWith("-") && !line.startsWith("---")
+                      ? "deletion"
+                      : line.startsWith("@@")
+                        ? "hunk"
+                        : "context";
+                  return (
+                    <div className={`diff-line ${type}`} key={`${index}-${line}`}>
+                      <span className="diff-line-number">{index + 1}</span>
+                      <code>{line || " "}</code>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <footer className="diff-review-footer">
+              <button className="outline" onClick={() => setDiffReviewOpen(false)}>
+                继续检查
+              </button>
+              <span></span>
+              <button
+                className="primary success"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `确认将 ${selected.merge?.branch || selected.worktree} 合并到 ${selected.merge?.targetBranch || "目标分支"}？`,
+                    )
+                  ) {
+                    setDiffReviewOpen(false);
+                    mergeDelivery();
+                  }
+                }}
+              >
+                确认合并到 {selected.merge?.targetBranch || "目标分支"}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
       {composerOpen && (
         <div className="modal-backdrop" role="presentation">
           <section

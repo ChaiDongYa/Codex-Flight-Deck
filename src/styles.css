@@ -1341,30 +1341,50 @@ nav button span {
   color: #397154 !important;
   font-weight: 650;
 }
-.merge-stat,
-.merge-diff pre {
-  max-height: 280px;
-  margin: 13px 0 0;
-  overflow: auto;
-  padding: 10px;
-  border: 1px solid #e0e7ef;
-  border-radius: 7px;
-  background: #f7f9fc;
-  color: #405069;
+.merge-summary {
+  display: block;
+  margin-top: 11px;
+  color: #718096;
   font-size: 11px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
-.merge-diff {
-  margin-top: 12px;
+.diff-backdrop { z-index: 30; padding: 22px; }
+.diff-review-modal {
+  width: min(1180px, 100%); height: min(780px, calc(100vh - 44px)); max-height: none;
+  display: flex; flex-direction: column; overflow: hidden; padding: 0;
 }
-.merge-diff summary {
-  cursor: pointer;
-  color: #1769e9;
-  font-size: 12px;
-  font-weight: 700;
+.diff-review-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 18px;
+  padding: 25px 30px 19px; border-bottom: 1px solid #e5eaf1;
 }
+.diff-review-header .modal-kicker { margin-bottom: 7px; }
+.diff-review-header h2 { font-size: 21px; }
+.diff-review-header p { margin: 7px 0 0; color: #718096; font-size: 12px; }
+.diff-review-body { display: grid; grid-template-columns: 245px minmax(0, 1fr); min-height: 0; flex: 1; }
+.diff-file-list { overflow-y: auto; padding: 17px 10px; border-right: 1px solid #e5eaf1; background: #f8fafc; }
+.diff-file-list > b { display: block; padding: 0 10px 10px; color: #536278; font-size: 11px; }
+.diff-file-list button {
+  width: 100%; display: grid; gap: 6px; padding: 10px; border: 0; border-radius: 6px;
+  background: transparent; color: #41536c; text-align: left;
+}
+.diff-file-list button:hover, .diff-file-list button.active { background: #e9f1ff; color: #1f68d8; }
+.diff-file-list button span { overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.diff-file-list button small { display: flex; gap: 8px; font-size: 11px; }
+.diff-file-list i { font-style: normal; }
+.diff-add { color: #168854; }
+.diff-del { color: #cc3b47; }
+.diff-code { overflow: auto; padding: 14px 0 24px; background: #fff; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.diff-line { display: grid; grid-template-columns: 54px minmax(0, 1fr); min-height: 20px; }
+.diff-line code { padding: 0 16px; overflow: visible; color: #33445b; white-space: pre; }
+.diff-line-number { padding-right: 12px; color: #9aa7b8; text-align: right; user-select: none; }
+.diff-line.addition { background: #e8f7ee; }
+.diff-line.addition code { color: #16653f; }
+.diff-line.deletion { background: #fff0f1; }
+.diff-line.deletion code { color: #a42c37; }
+.diff-line.hunk { margin: 5px 0; background: #edf4ff; }
+.diff-line.hunk code { color: #2566bd; }
+.diff-review-footer { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 14px 20px; border-top: 1px solid #e5eaf1; background: #fff; }
+.diff-review-footer button { height: 38px; padding: 0 14px; border-radius: 7px; font-weight: 700; }
+.diff-review-footer .primary { border: 1px solid #168854; background: #168854; color: #fff; }
 .standalone-view {
   flex: 1;
   padding: 36px 42px;
