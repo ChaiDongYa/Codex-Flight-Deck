@@ -77,6 +77,7 @@ function hasTrustedDependency(taskId) {
 function deliverySummary(task) {
   const verification = task.evidence?.verification;
   const changedFiles = task.evidence?.workspace?.changedFiles || [];
+  const diffStat = task.merge?.diffStat || task.evidence?.workspace?.diffStat;
   const parts = [];
   if (verification?.exitCode === 0)
     parts.push(`验证通过：${verification.command}`);
@@ -84,6 +85,7 @@ function deliverySummary(task) {
     parts.push(`验证未通过：${verification.command || "未配置命令"}`);
   else parts.push("尚未运行验证");
   if (changedFiles.length) parts.push(`变更 ${changedFiles.length} 个文件`);
+  if (diffStat) parts.push(diffStat.replace(/\n/g, " · "));
   if (task.preview?.url) parts.push(`预览：${task.preview.url}`);
   if (task.merge?.state === "merged")
     parts.push(`已合并到 ${task.merge.targetBranch}`);
@@ -194,6 +196,62 @@ export function listAutoRunnableTasks() {
   );
 }
 
+export function recoverInterruptedAutoTasks() {
+  for (const task of listTasks()) {
+    if (task.status !== "执行中" || task.codex?.state !== "running") continue;
+    if (!task.automation?.autoRun && !hasTrustedDependency(task.id)) continue;
+    save({
+      ...task,
+      status: "计划中",
+      activity: "Flight Deck 重启后恢复夜间队列，等待重新启动",
+      codex: {
+        ...task.codex,
+        state: "stopped",
+        recoveredAt: new Date().toISOString(),
+      },
+    });
+  }
+}
+
+export function recordAutomationFailure(id, error) {
+  const task = getTask(id);
+  if (!task) return null;
+  return save({
+    ...task,
+    status: "已阻塞",
+    activity: "夜间自动队列已停止：启动或验证失败",
+    test: "自动化失败",
+    testTone: "danger",
+    automation: {
+      ...(task.automation || {}),
+      retries: (task.automation?.retries || 0) + 1,
+      lastError: `${error?.message || error}`.slice(0, 1200),
+      failedAt: new Date().toISOString(),
+    },
+  });
+}
+
+export function retryTask(id) {
+  const task = getTask(id);
+  if (!task) throw new Error("Task not found");
+  if (["执行中", "已完成"].includes(task.status))
+    throw new Error("运行中或已完成任务不能重试。");
+  return save({
+    ...task,
+    status: canRun(id) ? "待开始" : "等待依赖",
+    activity: canRun(id)
+      ? "已加入重试队列，等待启动"
+      : "已请求重试，仍等待前置依赖",
+    test: "等待重新执行",
+    testTone: "neutral",
+    automation: {
+      ...(task.automation || {}),
+      lastError: "",
+      retriedAt: new Date().toISOString(),
+    },
+  });
+}
+
 export function getTask(id) {
   return parse(db.prepare("SELECT payload FROM tasks WHERE id = ?").get(id));
 }
@@ -215,6 +273,7 @@ export function createTask(input) {
   const role = roles.has(input.role) ? input.role : "全栈工程师";
   const task = {
     id,
+    createdAt: new Date().toISOString(),
     title,
     role,
     description: input.goal?.trim() || "等待补充交付目标。",

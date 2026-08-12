@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { execFile, execFileSync, spawn } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
@@ -16,6 +23,13 @@ const defaultPolicy = () => ({
   skills: [],
   verificationCommand: "",
 });
+
+const projectContextFiles = [
+  "AGENTS.md",
+  "README.md",
+  "package.json",
+  "CONTRIBUTING.md",
+];
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
@@ -120,6 +134,46 @@ export function updateProjectPolicy(candidatePath, input = {}) {
     policies: { ...(config.policies || {}), [project.path]: policy },
   });
   return inspectProject(project.path);
+}
+
+export function discoverProjectSetup(candidatePath) {
+  const project = inspectProject(candidatePath);
+  const contextFiles = projectContextFiles
+    .filter((name) => existsSync(path.join(project.path, name)))
+    .map((name) => name);
+  let scripts = [];
+  try {
+    scripts = Object.keys(
+      JSON.parse(readFileSync(path.join(project.path, "package.json"), "utf8"))
+        .scripts || {},
+    );
+  } catch {
+    /* Projects without package.json can still use Flight Deck. */
+  }
+  return { project, contextFiles, scripts, skills: listInstalledSkills() };
+}
+
+export function listInstalledSkills() {
+  const roots = [
+    path.join(process.env.HOME || "", ".codex", "skills"),
+    path.join(process.env.HOME || "", ".agents", "skills"),
+  ];
+  const found = new Set();
+  const walk = (directory, depth = 0) => {
+    if (depth > 2 || !existsSync(directory)) return;
+    for (const entry of readdirSync(directory)) {
+      const entryPath = path.join(directory, entry);
+      try {
+        if (entry === "SKILL.md")
+          found.add(path.basename(path.dirname(entryPath)));
+        else if (statSync(entryPath).isDirectory()) walk(entryPath, depth + 1);
+      } catch {
+        /* A missing or inaccessible skill should not block project setup. */
+      }
+    }
+  };
+  roots.forEach((directory) => walk(directory));
+  return [...found].sort();
 }
 
 export function setActiveProject(candidatePath) {

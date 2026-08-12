@@ -49,12 +49,21 @@ export function App() {
   const [tasksLoaded, setTasksLoaded] = useState(false);
   const [inspectorWidth, setInspectorWidth] = useState(420);
   const [resizingInspector, setResizingInspector] = useState(false);
+  const [queue, setQueue] = useState({ paused: false, running: 0, queued: 0 });
+  const [onlyActionable, setOnlyActionable] = useState(false);
+  const [discovery, setDiscovery] = useState({
+    contextFiles: [],
+    scripts: [],
+    skills: [],
+  });
   const visibleTasks = useMemo(
     () =>
       tasks.filter(
         (task) =>
           (allProjects || task.projectPath === project?.path) &&
           (filter === "全部" || task.status === filter) &&
+          (!onlyActionable ||
+            ["待开始", "待复核", "已阻塞"].includes(task.status)) &&
           `${task.title} ${task.id}`
             .toLowerCase()
             .includes(query.toLowerCase()),
@@ -80,18 +89,23 @@ export function App() {
     setProjects(data.projects);
     setProject(data.active);
   };
+  const refreshQueue = async () => {
+    const response = await fetch("/api/queue");
+    if (response.ok) setQueue(await response.json());
+  };
   useEffect(() => {
     refreshTasks().catch(() => setToast("无法读取本地 SQLite 数据库。"));
     refreshProjects().catch(() => setToast("无法读取真实 Git 项目。"));
+    refreshQueue().catch(() => {});
   }, []);
   useEffect(() => {
-    if (!hasRunningTask) return undefined;
-    const timer = window.setInterval(
-      () => refreshTasks().catch(() => {}),
-      2000,
-    );
-    return () => window.clearInterval(timer);
-  }, [hasRunningTask]);
+    const source = new EventSource("/api/events");
+    source.addEventListener("tasks", () => {
+      refreshTasks().catch(() => {});
+      refreshQueue().catch(() => {});
+    });
+    return () => source.close();
+  }, []);
   useEffect(() => {
     if (!resizingInspector) return undefined;
     const move = (event) =>
@@ -151,6 +165,12 @@ export function App() {
       selected.id,
       "verify",
       "已运行项目的真实验证命令，结果已写入交付证据。",
+    );
+  const retryTask = () =>
+    runAction(
+      selected.id,
+      "retry",
+      "已加入重试队列；会沿用原任务规则与 worktree。 ",
     );
   const launchPreview = async () => {
     const response = await fetch(`/api/tasks/${selected.id}/preview`, {
@@ -234,6 +254,22 @@ export function App() {
       },
     );
     setPolicyOpen(true);
+    if (project?.path)
+      fetch(`/api/projects/discover?path=${encodeURIComponent(project.path)}`)
+        .then((response) => response.json())
+        .then(setDiscovery)
+        .catch(() => {});
+  };
+  const toggleQueue = async () => {
+    const response = await fetch("/api/queue/toggle", { method: "POST" });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error);
+    setQueue((current) => ({ ...current, paused: data.paused }));
+    setToast(
+      data.paused
+        ? "夜间队列已暂停；运行中任务不会被中断。"
+        : "夜间队列已恢复。",
+    );
   };
   const savePolicy = async () => {
     const response = await fetch("/api/projects/policy", {
@@ -396,6 +432,16 @@ export function App() {
               placeholder="搜索任务…"
             />
           </label>
+          <button
+            className={`queue-control ${queue.paused ? "paused" : ""}`}
+            onClick={toggleQueue}
+            title="夜间队列最多并行 2 项任务"
+          >
+            {queue.paused ? "▶ 恢复队列" : "Ⅱ 暂停队列"}{" "}
+            <span>
+              {queue.running}/{queue.queued}
+            </span>
+          </button>
         </header>
         {view === "tasks" && (
           <main
@@ -415,6 +461,12 @@ export function App() {
                   <p>把需求变成可验证的 Codex 交付。</p>
                 </div>
                 <div className="list-actions">
+                  <button
+                    className={`outline actionable-filter ${onlyActionable ? "active" : ""}`}
+                    onClick={() => setOnlyActionable((value) => !value)}
+                  >
+                    仅看待我处理
+                  </button>
                   <button
                     className="outline quick-delivery"
                     onClick={() => {
@@ -530,7 +582,9 @@ export function App() {
                     </span>
                     <span className="worktree">
                       {task.worktree}
-                      <small>a1b2c3d</small>
+                      <small>
+                        {task.codex?.head || task.merge?.commit || "尚未创建"}
+                      </small>
                     </span>
                     <span className="activity">{task.activity}</span>
                     <span className={`test ${task.testTone}`}>{task.test}</span>
@@ -917,8 +971,14 @@ export function App() {
                       </>
                     ) : selected.status === "已阻塞" ? (
                       <>
+                        <button className="primary" onClick={retryTask}>
+                          ↻ 重试任务
+                        </button>
                         <button onClick={requestChanges}>修改计划后重试</button>
-                        <small>请处理验证或依赖问题后重新启动。</small>
+                        <small>
+                          {selected.automation?.lastError ||
+                            "请处理验证或依赖问题后重新启动。"}
+                        </small>
                       </>
                     ) : selected.status === "已完成" ? (
                       <small>已验收。代码、验证和合并记录会保留。</small>
@@ -1056,8 +1116,14 @@ export function App() {
                       <h2>{task.title}</h2>
                       <p>{task.description}</p>
                       <div className="review-evidence">
-                        <span>✓ 42 项测试通过</span>
-                        <span>✓ 类型检查通过</span>
+                        <span>
+                          {task.summary?.headline || "未采集验证结果"}
+                        </span>
+                        <span>
+                          {task.summary?.details?.find((detail) =>
+                            detail.includes("变更"),
+                          ) || "未采集变更统计"}
+                        </span>
                         <span>⌘ {task.worktree}</span>
                       </div>
                     </div>
@@ -1068,18 +1134,31 @@ export function App() {
                       >
                         查看证据
                       </button>
-                      <button
-                        className="primary success"
-                        onClick={() =>
-                          runAction(
-                            task.id,
-                            "accept",
-                            "交付已验收，任务已归档。",
-                          )
-                        }
-                      >
-                        ✓ 接受交付
-                      </button>
+                      {!task.codex?.isolated ||
+                      task.merge?.state === "merged" ? (
+                        <button
+                          className="primary success"
+                          onClick={() =>
+                            runAction(
+                              task.id,
+                              "accept",
+                              "交付已验收，任务已归档。",
+                            )
+                          }
+                        >
+                          ✓ 接受交付
+                        </button>
+                      ) : (
+                        <button
+                          className="primary"
+                          onClick={() => {
+                            setSelectedId(task.id);
+                            setView("tasks");
+                          }}
+                        >
+                          查看 diff 并合并
+                        </button>
+                      )}
                       <button
                         onClick={() =>
                           runAction(
@@ -1400,6 +1479,17 @@ export function App() {
               会在原项目目录执行，并标记为共享工作目录。
             </p>
             <div className="form-stack">
+              {discovery.contextFiles.length > 0 && (
+                <div className="discovery-card">
+                  <b>已发现项目上下文</b>
+                  <span>{discovery.contextFiles.join(" · ")}</span>
+                  <small>
+                    {discovery.scripts.length
+                      ? `可用 npm scripts：${discovery.scripts.join("、")}`
+                      : "未发现 package.json 脚本"}
+                  </small>
+                </div>
+              )}
               <label>
                 项目文件夹
                 <input
@@ -1503,27 +1593,28 @@ export function App() {
                   只会把名称和使用要求写入任务提示词，不会自动安装或执行未知
                   Skill。
                 </span>
-                {["manage-taskboard", "dashi-ppt", "task-handoff"].map(
-                  (skill) => (
-                    <label key={skill}>
-                      <input
-                        type="checkbox"
-                        checked={policyDraft.skills.includes(skill)}
-                        onChange={() =>
-                          setPolicyDraft({
-                            ...policyDraft,
-                            skills: policyDraft.skills.includes(skill)
-                              ? policyDraft.skills.filter(
-                                  (item) => item !== skill,
-                                )
-                              : [...policyDraft.skills, skill],
-                          })
-                        }
-                      />
-                      ${skill}
-                    </label>
-                  ),
-                )}
+                {(discovery.skills.length
+                  ? discovery.skills
+                  : ["manage-taskboard", "dashi-ppt", "task-handoff"]
+                ).map((skill) => (
+                  <label key={skill}>
+                    <input
+                      type="checkbox"
+                      checked={policyDraft.skills.includes(skill)}
+                      onChange={() =>
+                        setPolicyDraft({
+                          ...policyDraft,
+                          skills: policyDraft.skills.includes(skill)
+                            ? policyDraft.skills.filter(
+                                (item) => item !== skill,
+                              )
+                            : [...policyDraft.skills, skill],
+                        })
+                      }
+                    />
+                    ${skill}
+                  </label>
+                ))}
               </div>
             </div>
             <footer className="modal-actions">
@@ -1559,34 +1650,80 @@ export function App() {
               <section>
                 <h3>验证结果</h3>
                 <ul>
-                  <li>✓ 42 项单元与集成测试通过</li>
-                  <li>✓ 类型检查与代码规范通过</li>
-                  <li>✓ 构建产物生成成功</li>
+                  <li>
+                    {reviewDetail.evidence?.verification?.command ||
+                      "未配置或未运行验证命令"}
+                  </li>
+                  <li>
+                    {reviewDetail.evidence?.verification
+                      ? reviewDetail.evidence.verification.exitCode === 0
+                        ? "✓ 命令退出成功"
+                        : `✕ 命令失败（退出码 ${reviewDetail.evidence.verification.exitCode}）`
+                      : "未采集验证结果"}
+                  </li>
+                  <li>
+                    {reviewDetail.preview?.url
+                      ? `预览：${reviewDetail.preview.url}`
+                      : "未启动任务预览"}
+                  </li>
                 </ul>
               </section>
               <section>
                 <h3>变更摘要</h3>
                 <ul>
-                  <li>2 个核心文件修改</li>
-                  <li>+184 / -26 行变更</li>
-                  <li>未触及受保护目录</li>
+                  <li>
+                    {reviewDetail.evidence?.workspace?.changedFiles?.length
+                      ? `${reviewDetail.evidence.workspace.changedFiles.length} 个文件发生变化`
+                      : "未采集变更文件"}
+                  </li>
+                  <li>
+                    {reviewDetail.merge?.diffStat ||
+                      reviewDetail.evidence?.workspace?.diffStat ||
+                      "未生成 Git diff 统计"}
+                  </li>
+                  <li>
+                    {reviewDetail.merge?.state === "merged"
+                      ? `已合并到 ${reviewDetail.merge.targetBranch}`
+                      : "尚未合并到目标分支"}
+                  </li>
                 </ul>
               </section>
             </div>
             <section className="risk-box">
-              <b>Codex 风险说明</b>
+              <b>交付风险与下一步</b>
               <p>
-                税率生效时间依赖配置数据；上线前应由业务确认 2024
-                年地区规则的最终版本。
+                {reviewDetail.evidence?.verification?.guidance ||
+                reviewDetail.merge?.state !== "merged"
+                  ? "尚未合并；请查看真实 diff、预览效果并确认目标分支状态。"
+                  : "未记录额外风险；仍建议按项目发布流程进行人工验收。"}
               </p>
             </section>
             <section>
               <h3>执行时间线</h3>
               <div className="evidence-timeline">
-                <span>09:24 创建 worktree</span>
-                <span>09:26 开始实施</span>
-                <span>09:32 测试通过</span>
-                <span>09:34 提交复核</span>
+                <span>
+                  创建：
+                  {new Date(
+                    reviewDetail.createdAt || Date.now(),
+                  ).toLocaleString("zh-CN")}
+                </span>
+                <span>
+                  启动：
+                  {reviewDetail.codex?.startedAt
+                    ? new Date(reviewDetail.codex.startedAt).toLocaleString(
+                        "zh-CN",
+                      )
+                    : "未启动"}
+                </span>
+                <span>
+                  验证：
+                  {reviewDetail.evidence?.verifiedAt
+                    ? new Date(reviewDetail.evidence.verifiedAt).toLocaleString(
+                        "zh-CN",
+                      )
+                    : "未验证"}
+                </span>
+                <span>复核：等待人工确认</span>
               </div>
             </section>
             <footer className="modal-actions">

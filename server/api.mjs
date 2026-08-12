@@ -11,16 +11,20 @@ import {
   recordMergePreview,
   recordMergeResult,
   recordTaskPreview,
+  retryTask,
   recordVerification,
   recordWorkspaceEvidence,
+  recordAutomationFailure,
+  recoverInterruptedAutoTasks,
   returnTask,
 } from "./db.mjs";
-import { launchCodexTask } from "./codex.mjs";
+import { launchCodexTask, stopCodexSession } from "./codex.mjs";
 import {
   addProject,
   listProjects,
   setActiveProject,
   updateProjectPolicy,
+  discoverProjectSetup,
 } from "./project.mjs";
 import {
   inspectWorkspace,
@@ -32,6 +36,16 @@ import {
 import { execFile } from "node:child_process";
 
 const launchingAutomatically = new Set();
+const events = new Set();
+let queuePaused = false;
+const queueConcurrency = 2;
+const taskTimeouts = new Map();
+const automaticTimeoutMs = 45 * 60 * 1000;
+
+function publish(event, payload = {}) {
+  const message = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const response of events) response.write(message);
+}
 
 async function verifyAutomatically(id) {
   const task = listTasks().find((item) => item.id === id);
@@ -49,9 +63,10 @@ async function verifyAutomatically(id) {
   );
   recordWorkspaceEvidence(task.id, inspectWorkspace(task.codex.workspacePath));
   recordVerification(task.id, verification, null);
+  publish("tasks", { reason: "automatic-verification" });
 }
 
-async function launchTask(id) {
+async function launchTask(id, { automated = false } = {}) {
   const task = listTasks().find((item) => item.id === id);
   if (!task || !["待开始", "计划中"].includes(task.status) || !task.canRun)
     return null;
@@ -61,23 +76,58 @@ async function launchTask(id) {
     const launch = await launchCodexTask(task, {
       onEvent: (event) => {
         recordCodexEvent(id, event);
+        publish("tasks", { reason: "codex-event", id });
         if (event.method === "turn/completed") {
+          const timer = taskTimeouts.get(id);
+          if (timer) clearTimeout(timer);
+          taskTimeouts.delete(id);
           void verifyAutomatically(id)
             .then(drainNightQueue)
             .catch(() => {});
         }
       },
     });
-    return recordCodexLaunch(id, launch);
+    const launched = recordCodexLaunch(id, launch);
+    if (automated && launch.threadId) {
+      taskTimeouts.set(
+        id,
+        setTimeout(() => {
+          stopCodexSession(launch.threadId);
+          recordAutomationFailure(
+            id,
+            new Error("夜间任务超过 45 分钟仍未结束，已安全停止。"),
+          );
+          publish("tasks", { reason: "automation-timeout", id });
+        }, automaticTimeoutMs),
+      );
+    }
+    publish("tasks", { reason: "launch", id });
+    return launched;
+  } catch (error) {
+    if (automated) {
+      recordAutomationFailure(id, error);
+      publish("tasks", { reason: "automation-failed", id });
+    }
+    throw error;
   } finally {
     launchingAutomatically.delete(id);
   }
 }
 
 async function drainNightQueue() {
-  const candidates = listAutoRunnableTasks();
-  await Promise.allSettled(candidates.map((task) => launchTask(task.id)));
+  if (queuePaused) return;
+  const running = listTasks().filter(
+    (task) => task.codex?.state === "running",
+  ).length;
+  const capacity = Math.max(0, queueConcurrency - running);
+  const candidates = listAutoRunnableTasks().slice(0, capacity);
+  await Promise.allSettled(
+    candidates.map((task) => launchTask(task.id, { automated: true })),
+  );
 }
+
+recoverInterruptedAutoTasks();
+void drainNightQueue();
 
 const json = (response, status, payload) => {
   response.statusCode = status;
@@ -116,8 +166,41 @@ export async function api(request, response) {
   try {
     if (request.method === "GET" && url.pathname === "/api/tasks")
       return json(response, 200, { tasks: listTasks() });
+    if (request.method === "GET" && url.pathname === "/api/events") {
+      response.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      });
+      response.write("event: connected\ndata: {}\n\n");
+      events.add(response);
+      request.on("close", () => events.delete(response));
+      return true;
+    }
+    if (request.method === "GET" && url.pathname === "/api/queue")
+      return json(response, 200, {
+        paused: queuePaused,
+        concurrency: queueConcurrency,
+        running: listTasks().filter((task) => task.codex?.state === "running")
+          .length,
+        queued: listAutoRunnableTasks().length,
+      });
+    if (request.method === "POST" && url.pathname === "/api/queue/toggle") {
+      queuePaused = !queuePaused;
+      if (!queuePaused) void drainNightQueue();
+      publish("tasks", {
+        reason: queuePaused ? "queue-paused" : "queue-resumed",
+      });
+      return json(response, 200, { paused: queuePaused });
+    }
     if (request.method === "GET" && url.pathname === "/api/projects")
       return json(response, 200, listProjects());
+    if (request.method === "GET" && url.pathname === "/api/projects/discover")
+      return json(
+        response,
+        200,
+        discoverProjectSetup(url.searchParams.get("path")),
+      );
     if (request.method === "POST" && url.pathname === "/api/projects/pick")
       return json(response, 200, { path: await pickFolder() });
     if (request.method === "POST" && url.pathname === "/api/projects")
@@ -148,6 +231,13 @@ export async function api(request, response) {
     if (request.method === "DELETE" && deleteMatch) {
       deleteTask(deleteMatch[1]);
       return json(response, 200, { tasks: listTasks() });
+    }
+    const retryMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/retry$/);
+    if (request.method === "POST" && retryMatch) {
+      const task = retryTask(retryMatch[1]);
+      void drainNightQueue();
+      publish("tasks", { reason: "retry", id: task.id });
+      return json(response, 200, { task, tasks: listTasks() });
     }
     const launchMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/launch$/);
     if (request.method === "POST" && launchMatch) {

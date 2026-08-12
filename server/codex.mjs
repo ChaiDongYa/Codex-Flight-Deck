@@ -103,3 +103,11 @@ export async function launchCodexTask(task, callbacks) {
 export function activeSessionCount() {
   return sessions.size;
 }
+
+export function stopCodexSession(threadId) {
+  const server = sessions.get(threadId);
+  if (!server) return false;
+  server.child.kill();
+  sessions.delete(threadId);
+  return true;
+}
