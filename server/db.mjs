@@ -370,6 +370,26 @@ export function updateReleaseStage(id, stage) {
   db.prepare("UPDATE releases SET payload = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(updated), new Date().toISOString(), id);
   return updated;
 }
+export function updateRelease(id, input = {}) {
+  const row = db.prepare("SELECT payload FROM releases WHERE id = ?").get(id);
+  const release = parse(row);
+  if (!release) throw new Error("版本不存在。");
+  const name = `${input.name ?? release.name}`.trim();
+  if (!name) throw new Error("请填写版本名称。");
+  const updated = {
+    ...release,
+    name,
+    goal: `${input.goal ?? release.goal ?? ""}`.trim(),
+    startDate: `${input.startDate ?? release.startDate ?? ""}`.trim(),
+    releaseDate: `${input.releaseDate ?? release.releaseDate ?? ""}`.trim(),
+  };
+  db.prepare("UPDATE releases SET payload = ?, updated_at = ? WHERE id = ?").run(
+    JSON.stringify(updated),
+    new Date().toISOString(),
+    id,
+  );
+  return enrichRelease(updated);
+}
 export function createTask(input) {
   const id = `FD-${2200 + db.prepare("SELECT COUNT(*) as count FROM tasks").get().count}`;
   const title = input.title?.trim() || "新的 Codex 交付";
@@ -482,6 +502,58 @@ export function recordCodexLaunch(id, launch) {
           detail: launch.workspacePath,
         },
       ],
+    },
+  });
+}
+
+export function recordRevisionLaunch(id, launch, feedback) {
+  const task = getTask(id);
+  if (!task) throw new Error("Task not found");
+  if (!task.codex?.workspacePath)
+    throw new Error("任务尚未创建 worktree，无法进行增量修改。");
+  if (["执行中", "已完成"].includes(task.status))
+    throw new Error("当前状态不能启动增量修改。");
+  const note = `${feedback || ""}`.trim();
+  if (!note) throw new Error("请先描述需要修改的问题。");
+  const now = new Date().toISOString();
+  const revisions = [
+    ...(task.revisions || []),
+    {
+      at: now,
+      feedback: note,
+      threadId: launch.threadId,
+      turnId: launch.turnId,
+      state: "running",
+    },
+  ].slice(-12);
+  return save({
+    ...task,
+    approved: true,
+    status: "执行中",
+    activity: `正在增量修改：${note.slice(0, 48)}`,
+    test: "等待增量修改完成",
+    testTone: "neutral",
+    merge: task.merge?.state === "merged" ? task.merge : undefined,
+    codex: {
+      ...task.codex,
+      ...launch,
+      state: "running",
+      startedAt: now,
+      revision: true,
+    },
+    revisions,
+    execution: {
+      phase: "正在按修改意见增量修订",
+      updatedAt: now,
+      events: [
+        ...(task.execution?.events || []),
+        {
+          at: now,
+          kind: "revision-started",
+          label: "Codex 开始增量修改",
+          detail: note,
+        },
+      ].slice(-40),
     },
   });
 }

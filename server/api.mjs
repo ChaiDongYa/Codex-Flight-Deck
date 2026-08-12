@@ -11,6 +11,7 @@ import {
   listReleaseStages,
   updateReleaseStages,
   updateReleaseStage,
+  updateRelease,
   recordCodexEvent,
   recordCodexLaunch,
   recordMergePreview,
@@ -182,6 +183,9 @@ export async function api(request, response) {
     }
     if (request.method === "POST" && url.pathname === "/api/releases")
       return json(response, 201, { release: createRelease(await readBody(request)) });
+    const releaseMatch = url.pathname.match(/^\/api\/releases\/([^/]+)$/);
+    if (request.method === "PUT" && releaseMatch)
+      return json(response, 200, { release: updateRelease(releaseMatch[1], await readBody(request)) });
     const releaseStageMatch = url.pathname.match(/^\/api\/releases\/([^/]+)\/stage$/);
     if (request.method === "PUT" && releaseStageMatch)
       return json(response, 200, { release: updateReleaseStage(releaseStageMatch[1], (await readBody(request)).stage) });
