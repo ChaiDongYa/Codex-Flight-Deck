@@ -37,7 +37,7 @@ export function listTasks() { return db.prepare("SELECT payload FROM tasks ORDER
 export function createTask(input) {
   const id = `FD-${2200 + db.prepare("SELECT COUNT(*) as count FROM tasks").get().count}`;
   const title = input.title?.trim() || "新的 Codex 交付";
-  const task = { id, title, description: input.goal?.trim() || "等待补充交付目标。", status: "待开始", worktree: `wt/${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "new-delivery"}`, activity: "已根据目标生成实施计划", test: "未运行", testTone: "neutral", files: ["AGENTS.md", "README.md", "相关业务模块（待扫描）"], plan: ["阅读已选上下文与项目约定", "实施目标范围内的最小变更", "运行验收标准要求的验证"], approved: false, acceptance: input.acceptance || "" };
+  const task = { id, title, description: input.goal?.trim() || "等待补充交付目标。", projectPath: input.projectPath || "", status: "待开始", worktree: `wt/${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "new-delivery"}`, activity: "已根据目标生成实施计划", test: "未运行", testTone: "neutral", files: ["AGENTS.md", "README.md", "相关业务模块（待扫描）"], plan: ["阅读已选上下文与项目约定", "实施目标范围内的最小变更", "运行验收标准要求的验证"], approved: false, acceptance: input.acceptance || "" };
   const now = new Date().toISOString(); db.prepare("INSERT INTO tasks (id, payload, created_at, updated_at) VALUES (?, ?, ?, ?)").run(task.id, JSON.stringify(task), now, now);
   for (const dependency of input.dependencies || []) db.prepare("INSERT OR IGNORE INTO dependencies (dependent_id, prerequisite_id, gate) VALUES (?, ?, ?)").run(task.id, dependency.id, dependency.gate === "accept" ? "accept" : "test");
   return task;
