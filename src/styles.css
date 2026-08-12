@@ -1820,7 +1820,7 @@ body {
 .test.danger, .diff-del { color: var(--fd-red); }
 .modal-backdrop { background: rgb(0 0 0 / 52%); }
 .diff-file-list { background: var(--fd-surface-muted); }
-.diff-file-list button { color: var(--fd-text-muted); }
+.diff-file-list button { background: transparent; color: var(--fd-text-muted); }
 .diff-file-list button:hover, .diff-file-list button.active { color: var(--fd-blue); background: var(--fd-blue-muted); }
 .diff-line code { color: var(--fd-text); }
 .diff-line.addition { background: var(--fd-green-muted); }

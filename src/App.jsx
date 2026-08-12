@@ -24,6 +24,9 @@ function splitDiffFiles(diff = "") {
 }
 
 export function App() {
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("flight-deck-theme") || "system",
+  );
   const [tasks, setTasks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("全部");
@@ -363,6 +366,11 @@ export function App() {
   );
   const worktrees = projectTasks.filter((task) => task.status !== "已完成");
   const reviewTasks = projectTasks.filter((task) => task.status === "待复核");
+  const cycleTheme = () => {
+    const next = theme === "system" ? "light" : theme === "light" ? "dark" : "system";
+    setTheme(next);
+    localStorage.setItem("flight-deck-theme", next);
+  };
   if (!tasksLoaded)
     return (
       <div className="app-shell">
@@ -375,7 +383,7 @@ export function App() {
       </div>
     );
   return (
-    <div className="app-shell">
+    <div className={`app-shell theme-${theme}`}>
       <section className="workspace">
         <header className="topbar">
           <div className="project-wrap">
@@ -469,6 +477,14 @@ export function App() {
               placeholder="搜索任务…"
             />
           </label>
+          <button
+            className="theme-control"
+            onClick={cycleTheme}
+            title="切换 Flight Deck 主题"
+            aria-label="切换 Flight Deck 主题"
+          >
+            {theme === "system" ? "◐ 跟随系统" : theme === "dark" ? "☾ 深色" : "☀ 浅色"}
+          </button>
           <button
             className={`queue-control ${queue.paused ? "paused" : ""}`}
             onClick={toggleQueue}
