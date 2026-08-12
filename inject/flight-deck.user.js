@@ -4,7 +4,7 @@
   const FRAME_ID = "flight-deck-codex-frame";
   const OWNED = "data-flight-deck-owned";
   const HIDDEN = "data-flight-deck-native-hidden";
-  const APP_URL = window.__FLIGHT_DECK_URL__ || "http://127.0.0.1:4173/";
+  const APP_URL = window.__FLIGHT_DECK_URL__ || "http://127.0.0.1:48173/";
   let active = false;
   let entry;
   let page;

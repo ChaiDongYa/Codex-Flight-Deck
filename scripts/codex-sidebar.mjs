@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const port = Number(process.env.FLIGHT_DECK_CDP_PORT || 9232);
-const appUrl = process.env.FLIGHT_DECK_URL || "http://127.0.0.1:4173/";
+const port = Number(process.env.FLIGHT_DECK_CDP_PORT || 49232);
+const appUrl = process.env.FLIGHT_DECK_URL || "http://127.0.0.1:48173/";
+const profilePath = process.env.FLIGHT_DECK_CODEX_PROFILE || path.join(os.homedir(), "Library", "Application Support", "Flight Deck", "codex-profile");
 const script = await readFile(path.join(root, "inject", "flight-deck.user.js"), "utf8");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -16,7 +18,7 @@ async function waitForTarget() {
   while (Date.now() < until) {
     try {
       const pages = await targets();
-      const target = pages.find((item) => item.type === "page" && item.webSocketDebuggerUrl);
+      const target = pages.find((item) => item.type === "page" && item.url === "app://-/index.html" && item.webSocketDebuggerUrl);
       if (target) return target;
     } catch {}
     await sleep(500);
@@ -42,7 +44,8 @@ function connect(url) {
 async function isDebugging() { try { await targets(); return true; } catch { return false; } }
 
 if (!(await isDebugging())) {
-  spawn("open", ["-n", "-a", "/Applications/ChatGPT.app", "--args", `--remote-debugging-port=${port}`, `--remote-allow-origins=http://127.0.0.1:${port}`], { stdio: "ignore", detached: true }).unref();
+  await mkdir(profilePath, { recursive: true });
+  spawn("open", ["-n", "-a", "/Applications/ChatGPT.app", "--args", `--user-data-dir=${profilePath}`, `--remote-debugging-port=${port}`, `--remote-allow-origins=http://127.0.0.1:${port}`], { stdio: "ignore", detached: true }).unref();
   console.log("正在启动专用 Codex 窗口…");
 }
 const target = await waitForTarget();
@@ -50,5 +53,5 @@ const cdp = await connect(target.webSocketDebuggerUrl);
 await cdp.call("Page.setBypassCSP", { enabled: true });
 await cdp.call("Page.addScriptToEvaluateOnNewDocument", { source: `window.__FLIGHT_DECK_URL__=${JSON.stringify(appUrl)};\n${script}` });
 await cdp.call("Page.reload", { ignoreCache: true });
-console.log(`Flight Deck 已注入 Codex 侧栏（端口 ${port}）。Codex 窗口会重载一次；重载后点击 Flight Deck 即可打开。`);
+console.log(`Flight Deck 已注入独立 Codex 窗口（端口 ${port}）。主页面会安全重载一次；完成后点击 Flight Deck 即可打开。`);
 cdp.socket.close();
