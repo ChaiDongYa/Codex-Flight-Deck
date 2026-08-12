@@ -1758,6 +1758,77 @@ body {
 .content.with-inspector .inspector {
   border-left: 0;
 }
+
+/* Codex-aligned theme layer. It always follows the system/host appearance. */
+.app-shell {
+  --fd-canvas: #f7f8fa;
+  --fd-surface: #ffffff;
+  --fd-surface-muted: #f8fafc;
+  --fd-hover: #f1f5f9;
+  --fd-border: #e2e8f0;
+  --fd-text: #1f2937;
+  --fd-text-muted: #64748b;
+  --fd-blue: #2f6feb;
+  --fd-blue-muted: #eaf2ff;
+  --fd-green: #1f8f5f;
+  --fd-green-muted: #e9f7ef;
+  --fd-amber: #a4670c;
+  --fd-amber-muted: #fff5df;
+  --fd-red: #c53b49;
+  --fd-red-muted: #fff0f1;
+}
+@media (prefers-color-scheme: dark) {
+  .app-shell {
+    --fd-canvas: #1b1d20;
+    --fd-surface: #242629;
+    --fd-surface-muted: #2a2d31;
+    --fd-hover: #33363b;
+    --fd-border: #3a3d43;
+    --fd-text: #eceef1;
+    --fd-text-muted: #a7adb8;
+    --fd-blue: #7aa2ff;
+    --fd-blue-muted: #283b5d;
+    --fd-green: #63c294;
+    --fd-green-muted: #203c2e;
+    --fd-amber: #e8b55c;
+    --fd-amber-muted: #4a3b20;
+    --fd-red: #f08491;
+    --fd-red-muted: #4b2930;
+  }
+  .app-shell { color-scheme: dark; }
+}
+
+.app-shell, .workspace, .content, .standalone-view { background: var(--fd-canvas); color: var(--fd-text); }
+.topbar, .inspector, .modal, .diff-code, .diff-review-footer, .project-menu, .filter-menu { background: var(--fd-surface); color: var(--fd-text); border-color: var(--fd-border); }
+.topbar, .table-head, .task-row, .inspector, .inspector section, .actions, .project-divider, .diff-review-header, .diff-review-footer, .diff-file-list { border-color: var(--fd-border); }
+.task-list, .inspector, .standalone-view, .diff-file-list { scrollbar-color: var(--fd-border) transparent; }
+.project, .top-tabs button, .filter-trigger, .task-row, .worktree, .activity, .test, .inspector h2, .inspector h3, .inspector section p, .files li, .plan li, .timeline li, .list-heading h1 { color: var(--fd-text); }
+.list-heading p, .task-name small, .worktree small, .description, .timeline span, .actions small, .empty, .search, .search input, .table-head, .test, .project-menu p { color: var(--fd-text-muted); }
+.project:hover, .project.open, .top-tabs button:hover, .task-row:hover, .filter-menu button:hover, .project-menu button:hover { background: var(--fd-hover); }
+.top-tabs button.active, .filter-menu button.chosen, .project-menu button.chosen { color: var(--fd-blue); background: var(--fd-blue-muted); box-shadow: none; }
+.top-tabs button.active { box-shadow: inset 0 -2px var(--fd-blue); }
+.search, .queue-control, .actionable-filter, .filter-trigger:hover, .filter-trigger.open, .actions button, .new-delivery, .create-delivery, .quick-delivery, .outline, .dependency-picker label select { background: var(--fd-surface); border-color: var(--fd-border); color: var(--fd-text); }
+.filter-trigger:hover, .filter-trigger.open { box-shadow: none; }
+.create-delivery, .actions .primary, .modal-actions .primary { background: var(--fd-blue); border-color: var(--fd-blue); color: #fff; }
+.actions .success, .merge-actions .primary, .diff-review-footer .primary { background: var(--fd-green); border-color: var(--fd-green); color: #102219; }
+.task-row.selected { background: color-mix(in srgb, var(--fd-blue-muted) 75%, var(--fd-surface)); box-shadow: inset 3px 0 var(--fd-blue), inset 0 0 0 1px var(--fd-blue); }
+.ready, .done { color: var(--fd-green); background: var(--fd-green-muted); }
+.planning, .running { color: var(--fd-blue); background: var(--fd-blue-muted); }
+.review { color: var(--fd-amber); background: var(--fd-amber-muted); }
+.blocked { color: var(--fd-red); background: var(--fd-red-muted); }
+.test.success, .diff-add { color: var(--fd-green); }
+.test.danger, .diff-del { color: var(--fd-red); }
+.modal-backdrop { background: rgb(0 0 0 / 52%); }
+.diff-file-list { background: var(--fd-surface-muted); }
+.diff-file-list button { color: var(--fd-text-muted); }
+.diff-file-list button:hover, .diff-file-list button.active { color: var(--fd-blue); background: var(--fd-blue-muted); }
+.diff-line code { color: var(--fd-text); }
+.diff-line.addition { background: var(--fd-green-muted); }
+.diff-line.addition code { color: var(--fd-green); }
+.diff-line.deletion { background: var(--fd-red-muted); }
+.diff-line.deletion code { color: var(--fd-red); }
+.diff-line.hunk { background: var(--fd-blue-muted); }
+.diff-line.hunk code { color: var(--fd-blue); }
 @media (max-width: 1120px) {
   .content.with-inspector {
     grid-template-columns: minmax(400px, 1fr) 8px var(--inspector-width, 390px);
