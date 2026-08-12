@@ -2,10 +2,13 @@ import {
   acceptTask,
   approveTask,
   createTask,
+  createRelease,
   deleteTask,
   getTask,
   listAutoRunnableTasks,
   listTasks,
+  listReleases,
+  updateReleaseStage,
   recordCodexEvent,
   recordCodexLaunch,
   recordMergePreview,
@@ -167,6 +170,13 @@ export async function api(request, response) {
   try {
     if (request.method === "GET" && url.pathname === "/api/tasks")
       return json(response, 200, { tasks: listTasks() });
+    if (request.method === "GET" && url.pathname === "/api/releases")
+      return json(response, 200, { releases: listReleases(url.searchParams.get("projectPath") || "") });
+    if (request.method === "POST" && url.pathname === "/api/releases")
+      return json(response, 201, { release: createRelease(await readBody(request)) });
+    const releaseStageMatch = url.pathname.match(/^\/api\/releases\/([^/]+)\/stage$/);
+    if (request.method === "PUT" && releaseStageMatch)
+      return json(response, 200, { release: updateReleaseStage(releaseStageMatch[1], (await readBody(request)).stage) });
     if (request.method === "GET" && url.pathname === "/api/events") {
       response.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -239,6 +249,14 @@ export async function api(request, response) {
       void drainNightQueue();
       publish("tasks", { reason: "retry", id: task.id });
       return json(response, 200, { task, tasks: listTasks() });
+    }
+    const openWorktreeMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/open-worktree$/);
+    if (request.method === "POST" && openWorktreeMatch) {
+      const task = getTask(openWorktreeMatch[1]);
+      const workspacePath = task?.codex?.workspacePath;
+      if (!workspacePath) return json(response, 400, { error: "任务尚未创建独立 worktree。" });
+      await new Promise((resolve, reject) => execFile("open", [workspacePath], (error) => error ? reject(error) : resolve()));
+      return json(response, 200, { tasks: listTasks() });
     }
     const stopMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/stop$/);
     if (request.method === "POST" && stopMatch) {

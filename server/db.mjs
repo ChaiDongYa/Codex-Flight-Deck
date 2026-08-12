@@ -22,6 +22,7 @@ const roles = new Set([
 db.exec(`
   CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS dependencies (dependent_id TEXT NOT NULL, prerequisite_id TEXT NOT NULL, gate TEXT NOT NULL DEFAULT 'test', PRIMARY KEY (dependent_id, prerequisite_id));
+  CREATE TABLE IF NOT EXISTS releases (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
 `);
 
 function parse(row) {
@@ -267,6 +268,37 @@ export function listTasks() {
       summary: deliverySummary(task),
     }));
 }
+const releaseStages = ["需求评审", "需求反讲", "技术方案", "开发阶段", "提测阶段", "UAT 阶段", "上线准备", "已上线 / 复盘"];
+export function listReleases(projectPath = "") {
+  return db.prepare("SELECT payload FROM releases ORDER BY updated_at DESC").all().map(parse)
+    .filter((release) => !projectPath || release.projectPath === projectPath)
+    .map((release) => {
+      const linked = listTasks().filter((task) => task.versionId === release.id);
+      const blocked = linked.filter((task) => task.status === "已阻塞").length;
+      const complete = linked.filter((task) => task.status === "已完成").length;
+      const overdue = release.releaseDate && new Date(release.releaseDate) < new Date() && release.stage !== "已上线 / 复盘";
+      return { ...release, tasks: { total: linked.length, complete, blocked }, health: blocked || overdue ? "有风险" : "正常" };
+    });
+}
+export function createRelease(input = {}) {
+  const name = `${input.name || ""}`.trim();
+  if (!name) throw new Error("请填写版本名称。");
+  const id = `REL-${Date.now().toString(36)}`;
+  const now = new Date().toISOString();
+  const release = { id, name, goal: `${input.goal || ""}`.trim(), projectPath: input.projectPath || "", releaseDate: input.releaseDate || "", stage: "需求评审", stages: releaseStages.map((name) => ({ name, done: false })), createdAt: now };
+  db.prepare("INSERT INTO releases (id, payload, created_at, updated_at) VALUES (?, ?, ?, ?)").run(id, JSON.stringify(release), now, now);
+  return release;
+}
+export function updateReleaseStage(id, stage) {
+  const row = db.prepare("SELECT payload FROM releases WHERE id = ?").get(id);
+  const release = parse(row);
+  if (!release) throw new Error("版本不存在。");
+  const currentIndex = releaseStages.indexOf(stage);
+  if (currentIndex < 0) throw new Error("未知的版本阶段。");
+  const updated = { ...release, stage, stages: releaseStages.map((name, index) => ({ name, done: index <= currentIndex })) };
+  db.prepare("UPDATE releases SET payload = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(updated), new Date().toISOString(), id);
+  return updated;
+}
 export function createTask(input) {
   const id = `FD-${2200 + db.prepare("SELECT COUNT(*) as count FROM tasks").get().count}`;
   const title = input.title?.trim() || "新的 Codex 交付";
@@ -301,6 +333,7 @@ export function createTask(input) {
       autoVerify: Boolean(input.automation?.autoVerify),
     },
     acceptance: input.acceptance || "",
+    versionId: input.versionId || "",
     merge: {
       mode: input.mergeMode === "auto" ? "auto" : "manual",
       targetBranch: input.targetBranch || "",

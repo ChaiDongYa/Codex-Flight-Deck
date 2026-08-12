@@ -65,6 +65,9 @@ export function App() {
     () => localStorage.getItem("flight-deck-theme") || "system",
   );
   const [tasks, setTasks] = useState([]);
+  const [releases, setReleases] = useState([]);
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [releaseDraft, setReleaseDraft] = useState({ name: "", goal: "", releaseDate: "" });
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("全部");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -94,6 +97,7 @@ export function App() {
     dependencies: [],
     mergeMode: "manual",
     automation: { autoRun: false, autoVerify: false },
+    versionId: "",
   });
   const [reviewDetail, setReviewDetail] = useState(null);
   const [diffReviewOpen, setDiffReviewOpen] = useState(false);
@@ -156,6 +160,11 @@ export function App() {
     setProjects(data.projects);
     setProject(data.active);
   };
+  const refreshReleases = async (projectPath = project?.path) => {
+    const response = await fetch(`/api/releases?projectPath=${encodeURIComponent(projectPath || "")}`);
+    const data = await response.json();
+    setReleases(data.releases || []);
+  };
   const refreshQueue = async () => {
     const response = await fetch("/api/queue");
     if (response.ok) setQueue(await response.json());
@@ -163,8 +172,12 @@ export function App() {
   useEffect(() => {
     refreshTasks().catch(() => setToast("无法读取本地 SQLite 数据库。"));
     refreshProjects().catch(() => setToast("无法读取真实 Git 项目。"));
+    refreshReleases().catch(() => {});
     refreshQueue().catch(() => {});
   }, []);
+  useEffect(() => {
+    if (project?.path) refreshReleases(project.path).catch(() => {});
+  }, [project?.path]);
   useEffect(() => {
     const source = new EventSource("/api/events");
     source.addEventListener("tasks", () => {
@@ -199,6 +212,31 @@ export function App() {
     setTasks(data.tasks);
     setToast(success);
     return true;
+  };
+  const openDiffReview = async (task) => {
+    const response = await fetch(`/api/tasks/${task.id}/merge-preview`, { method: "POST" });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error || "无法生成真实 diff");
+    setTasks(data.tasks);
+    setSelectedId(task.id);
+    setActiveDiffFile(0);
+    setDiffReviewOpen(true);
+  };
+  const openWorktree = (task) => runAction(task.id, "open-worktree", "已在 Finder 中打开任务 worktree。");
+  const updateReleaseStage = async (id, stage) => {
+    const response = await fetch(`/api/releases/${id}/stage`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stage }) });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error || "更新阶段失败");
+    await refreshReleases(); setToast(`版本已推进到「${stage}」`);
+  };
+  const createRelease = async () => {
+    const response = await fetch("/api/releases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...releaseDraft, projectPath: project?.path }) });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error || "创建版本失败");
+    setReleaseOpen(false);
+    setReleaseDraft({ name: "", goal: "", releaseDate: "" });
+    await refreshReleases();
+    setToast(`已创建版本 ${data.release.name}`);
   };
   const approvePlan = () =>
     runAction(
@@ -500,6 +538,12 @@ export function App() {
               onClick={() => setView("tasks")}
             >
               任务
+            </button>
+            <button
+              className={view === "releases" ? "active" : ""}
+              onClick={() => setView("releases")}
+            >
+              版本 {releases.length > 0 && <span>{releases.length}</span>}
             </button>
             <button
               className={view === "worktrees" ? "active" : ""}
@@ -1183,6 +1227,11 @@ export function App() {
                         ></i>
                       </div>
                     </div>
+                    <div className="worktree-actions">
+                      <button className="outline" onClick={() => openWorktree(task)}>打开目录</button>
+                      {task.status === "待复核" && <button className="outline" onClick={() => openDiffReview(task)}>查看变更</button>}
+                      {task.preview?.url && <a href={task.preview.url} target="_blank" rel="noreferrer">打开预览</a>}
+                    </div>
                   </article>
                 ))}
               </div>
@@ -1289,6 +1338,21 @@ export function App() {
                 <p>Codex 完成并验证任务后，会自动出现在这里。</p>
               </div>
             )}
+          </main>
+        )}
+        {view === "releases" && (
+          <main className="standalone-view release-view">
+            <header className="view-header">
+              <div><p className="eyebrow">版本与发布</p><h1>版本发布</h1><p>把版本节奏、上线日期与 Codex 交付聚合在同一个发布视图。</p></div>
+              <button className="primary create-delivery" onClick={() => setReleaseOpen(true)}>+ 新建版本</button>
+            </header>
+            {releases.length ? <div className="release-grid">{releases.map((release) => <article className="release-card" key={release.id}>
+              <div className="card-top"><span className={`status ${release.health === "有风险" ? "blocked" : "ready"}`}>{release.health}</span><small>{release.releaseDate ? `计划上线 ${release.releaseDate}` : "未设置上线日期"}</small></div>
+              <h2>{release.name}</h2><p>{release.goal || "未填写版本目标"}</p>
+              <div className="release-progress"><b>{release.stage}</b><span>{release.tasks.complete}/{release.tasks.total} 项交付已完成</span></div>
+              <select className="release-stage-select" value={release.stage} onChange={(event) => updateReleaseStage(release.id, event.target.value)}>{release.stages.map((stage) => <option key={stage.name} value={stage.name}>{stage.done ? "✓ " : ""}{stage.name}</option>)}</select>
+              <ol>{release.stages.map((stage) => <li key={stage.name} className={stage.name === release.stage ? "current" : stage.done ? "done" : ""}>{stage.name}</li>)}</ol>
+            </article>)}</div> : <div className="page-empty"><b>还没有版本计划</b><p>先创建版本，再把 Codex 任务绑定到对应版本。</p><button className="outline" onClick={() => setReleaseOpen(true)}>+ 新建版本</button></div>}
           </main>
         )}
       </section>
@@ -1470,6 +1534,13 @@ export function App() {
                     }
                     placeholder="描述用户问题、预期行为与边界…"
                   />
+                </label>
+                <label>
+                  所属版本（可选）
+                  <select value={draft.versionId} onChange={(event) => setDraft({ ...draft, versionId: event.target.value })}>
+                    <option value="">不关联版本</option>
+                    {releases.map((release) => <option key={release.id} value={release.id}>{release.name}</option>)}
+                  </select>
                 </label>
                 {quickMode && (
                   <label className="automation-switch">
@@ -1664,6 +1735,22 @@ export function App() {
                 </button>
               )}
             </footer>
+          </section>
+        </div>
+      )}
+      {releaseOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal release-modal" role="dialog" aria-modal="true" aria-labelledby="release-title">
+            <button className="modal-close" onClick={() => setReleaseOpen(false)}>×</button>
+            <div className="modal-kicker">版本与发布</div>
+            <h2 id="release-title">新建版本</h2>
+            <p className="description">默认生成需求评审、需求反讲、技术方案、开发、提测、UAT、上线准备与复盘阶段。</p>
+            <div className="form-stack">
+              <label>版本名称<input autoFocus value={releaseDraft.name} onChange={(event) => setReleaseDraft({ ...releaseDraft, name: event.target.value })} placeholder="例如：v1.8.0" /></label>
+              <label>版本目标<textarea value={releaseDraft.goal} onChange={(event) => setReleaseDraft({ ...releaseDraft, goal: event.target.value })} placeholder="本版本解决什么问题、交付什么价值？" /></label>
+              <label>计划上线日期<input type="date" value={releaseDraft.releaseDate} onChange={(event) => setReleaseDraft({ ...releaseDraft, releaseDate: event.target.value })} /></label>
+            </div>
+            <footer className="modal-actions"><button className="outline" onClick={() => setReleaseOpen(false)}>取消</button><span></span><button className="primary" onClick={createRelease}>创建版本</button></footer>
           </section>
         </div>
       )}
