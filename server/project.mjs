@@ -289,7 +289,9 @@ export function prepareTaskMerge(task, { commit = false } = {}) {
     ? ["diff", "--stat", `${targetBranch}...${branch}`]
     : ["diff", "--stat", targetBranch, "--"];
   const diffStat = git(statArgs, workspacePath) || "没有可合并的代码变更。";
-  const diff = git(diffArgs, workspacePath).slice(-24000);
+  // Store the complete local patch. A truncated patch can start or end in the
+  // middle of a file, which breaks file grouping and line-number rendering.
+  const diff = git(diffArgs, workspacePath);
   return {
     state: diff ? "ready" : "empty",
     targetBranch,

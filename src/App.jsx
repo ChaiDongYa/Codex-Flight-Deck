@@ -23,6 +23,41 @@ function splitDiffFiles(diff = "") {
     });
 }
 
+function parseUnifiedDiff(lines = []) {
+  let oldLine = null;
+  let newLine = null;
+
+  return lines.map((line, index) => {
+    const hunk = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (hunk) {
+      oldLine = Number(hunk[1]);
+      newLine = Number(hunk[2]);
+      return { id: index, type: "hunk", oldLine: "", newLine: "", text: line };
+    }
+
+    if (line.startsWith("+") && !line.startsWith("+++")) {
+      const row = { id: index, type: "addition", oldLine: "", newLine: newLine ?? "", text: line.slice(1) };
+      if (newLine !== null) newLine += 1;
+      return row;
+    }
+
+    if (line.startsWith("-") && !line.startsWith("---")) {
+      const row = { id: index, type: "deletion", oldLine: oldLine ?? "", newLine: "", text: line.slice(1) };
+      if (oldLine !== null) oldLine += 1;
+      return row;
+    }
+
+    if (line.startsWith(" ")) {
+      const row = { id: index, type: "context", oldLine: oldLine ?? "", newLine: newLine ?? "", text: line.slice(1) };
+      if (oldLine !== null) oldLine += 1;
+      if (newLine !== null) newLine += 1;
+      return row;
+    }
+
+    return { id: index, type: "meta", oldLine: "", newLine: "", text: line };
+  });
+}
+
 export function App() {
   const [theme, setTheme] = useState(
     () => localStorage.getItem("flight-deck-theme") || "system",
@@ -92,6 +127,11 @@ export function App() {
   const diffFiles = useMemo(
     () => splitDiffFiles(selected?.merge?.diff),
     [selected?.merge?.diff],
+  );
+  const activeDiff = diffFiles[activeDiffFile] ?? diffFiles[0];
+  const activeDiffRows = useMemo(
+    () => parseUnifiedDiff(activeDiff?.lines),
+    [activeDiff],
   );
   const hasRunningTask = tasks.some((task) => task.codex?.state === "running");
   const executionEvents = selected?.execution?.events || [];
@@ -1256,7 +1296,7 @@ export function App() {
             aria-labelledby="diff-review-title"
           >
             <button
-              className="modal-close"
+              className="diff-review-close"
               onClick={() => setDiffReviewOpen(false)}
               aria-label="关闭变更审阅"
             >
@@ -1265,17 +1305,19 @@ export function App() {
             <header className="diff-review-header">
               <div>
                 <div className="modal-kicker">真实 Git diff · 合并前审阅</div>
-                <h2 id="diff-review-title">{selected.title}</h2>
+                <div className="diff-review-title-row">
+                  <h2 id="diff-review-title">{selected.title}</h2>
+                  <span className="merge-state">等待你确认</span>
+                </div>
                 <p>
                   {selected.merge?.diffStat.split("\n").at(-1) ||
                     "已生成变更"}
                 </p>
               </div>
-              <span className="merge-state">等待你确认</span>
             </header>
             <div className="diff-review-body">
               <nav className="diff-file-list" aria-label="变更文件">
-                <b>变更文件</b>
+                <div className="diff-file-list-title">变更文件</div>
                 {diffFiles.map((file, index) => {
                   const additions = file.lines.filter(
                     (line) => line.startsWith("+") && !line.startsWith("+++"),
@@ -1289,7 +1331,10 @@ export function App() {
                       key={file.id}
                       onClick={() => setActiveDiffFile(index)}
                     >
-                      <span>{file.path}</span>
+                      <span className="diff-file-name">
+                        <i aria-hidden="true">⌑</i>
+                        {file.path}
+                      </span>
                       <small>
                         {additions > 0 && <i className="diff-add">+{additions}</i>}
                         {deletions > 0 && <i className="diff-del">−{deletions}</i>}
@@ -1299,21 +1344,24 @@ export function App() {
                 })}
               </nav>
               <div className="diff-code" aria-label="代码变更">
-                {(diffFiles[activeDiffFile]?.lines || []).map((line, index) => {
-                  const type = line.startsWith("+") && !line.startsWith("+++")
-                    ? "addition"
-                    : line.startsWith("-") && !line.startsWith("---")
-                      ? "deletion"
-                      : line.startsWith("@@")
-                        ? "hunk"
-                        : "context";
+                <div className="diff-code-title">
+                  <span>{activeDiff?.path || "代码变更"}</span>
+                  <small>旧行 / 新行</small>
+                </div>
+                {activeDiffRows.length ? activeDiffRows.map((row) => {
                   return (
-                    <div className={`diff-line ${type}`} key={`${index}-${line}`}>
-                      <span className="diff-line-number">{index + 1}</span>
-                      <code>{line || " "}</code>
+                    <div className={`diff-line ${row.type}`} key={`${row.id}-${row.text}`}>
+                      <span className="diff-line-number">{row.oldLine}</span>
+                      <span className="diff-line-number">{row.newLine}</span>
+                      <span className="diff-sign" aria-hidden="true">
+                        {row.type === "addition" ? "+" : row.type === "deletion" ? "−" : ""}
+                      </span>
+                      <code>{row.text || " "}</code>
                     </div>
                   );
-                })}
+                }) : (
+                  <div className="diff-empty">这个文件没有可呈现的文本补丁。</div>
+                )}
               </div>
             </div>
             <footer className="diff-review-footer">
