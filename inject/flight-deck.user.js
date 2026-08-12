@@ -8,6 +8,7 @@
   let active = false;
   let entry;
   let page;
+  let reconnectTimer;
 
   const style = document.createElement("style");
   style.setAttribute(OWNED, "true");
@@ -84,10 +85,21 @@
     if (page.parentElement !== host) host.appendChild(page);
     [...host.children].forEach((child) => { if (child !== page && child.getAttribute(OWNED) !== "true") child.setAttribute(HIDDEN, "true"); });
     page.hidden = false;
+    if (!reconnectTimer) reconnectTimer = window.setInterval(() => {
+      if (!active) return;
+      fetch(APP_URL, { mode: "no-cors", cache: "no-store" }).then(() => {
+        const frame = page?.querySelector(`#${FRAME_ID}`);
+        if (frame?.dataset.flightDeckOffline === "true") { frame.dataset.flightDeckOffline = "false"; frame.src = APP_URL; }
+      }).catch(() => {
+        const frame = page?.querySelector(`#${FRAME_ID}`);
+        if (frame) frame.dataset.flightDeckOffline = "true";
+      });
+    }, 3000);
   }
 
   function close() {
     active = false;
+    if (reconnectTimer) { window.clearInterval(reconnectTimer); reconnectTimer = undefined; }
     if (page) page.hidden = true;
     document.querySelectorAll(`[${HIDDEN}="true"]`).forEach((node) => node.removeAttribute(HIDDEN));
     ensureEntry();

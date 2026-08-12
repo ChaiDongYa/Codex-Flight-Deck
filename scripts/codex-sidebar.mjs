@@ -42,7 +42,16 @@ function connect(url) {
   return new Promise((resolve, reject) => { socket.addEventListener("open", () => resolve({ socket, call }), { once: true }); socket.addEventListener("error", reject, { once: true }); });
 }
 async function isDebugging() { try { await targets(); return true; } catch { return false; } }
+async function isFlightDeckAvailable() { try { const response = await fetch(appUrl, { signal: AbortSignal.timeout(1500) }); return response.ok; } catch { return false; } }
+async function ensureFlightDeck() {
+  if (await isFlightDeckAvailable()) return;
+  spawn("npm", ["run", "dev"], { cwd: root, stdio: "ignore", detached: true }).unref();
+  const until = Date.now() + 20_000;
+  while (Date.now() < until) { if (await isFlightDeckAvailable()) return; await sleep(500); }
+  throw new Error(`Flight Deck 本地服务未能启动：${appUrl}`);
+}
 
+await ensureFlightDeck();
 if (!(await isDebugging())) {
   await mkdir(profilePath, { recursive: true });
   spawn("open", ["-n", "-a", "/Applications/ChatGPT.app", "--args", `--user-data-dir=${profilePath}`, `--remote-debugging-port=${port}`, `--remote-allow-origins=http://127.0.0.1:${port}`], { stdio: "ignore", detached: true }).unref();
