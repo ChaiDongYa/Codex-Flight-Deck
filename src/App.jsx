@@ -1777,6 +1777,7 @@ export function App() {
             <div className="form-stack">
               <label>版本名称<input autoFocus value={releaseDraft.name} onChange={(event) => setReleaseDraft({ ...releaseDraft, name: event.target.value })} placeholder="例如：v1.8.0" /></label>
               <label>版本目标<textarea value={releaseDraft.goal} onChange={(event) => setReleaseDraft({ ...releaseDraft, goal: event.target.value })} placeholder="本版本解决什么问题、交付什么价值？" /></label>
+              <label>计划开始日期<input type="date" value={releaseDraft.startDate} onChange={(event) => setReleaseDraft({ ...releaseDraft, startDate: event.target.value })} /></label>
               <label>计划上线日期<input type="date" value={releaseDraft.releaseDate} onChange={(event) => setReleaseDraft({ ...releaseDraft, releaseDate: event.target.value })} /></label>
             </div>
             <footer className="modal-actions"><button className="outline" onClick={() => setReleaseOpen(false)}>取消</button><span></span><button className="primary" onClick={createRelease}>创建版本</button></footer>
