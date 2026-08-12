@@ -1102,38 +1102,6 @@ export function App() {
                     ) : selected.status === "待复核" ? (
                       <>
                         {selected.codex?.isolated &&
-                          selected.merge?.state !== "merged" && (
-                            <button
-                              className="primary"
-                              onClick={() => {
-                                if (selected.merge?.state === "ready") {
-                                  setActiveDiffFile(0);
-                                  setDiffReviewOpen(true);
-                                } else previewMerge();
-                              }}
-                            >
-                              {selected.merge?.diff
-                                ? "查看变更"
-                                : "生成变更审阅"}
-                            </button>
-                          )}
-                        {selected.codex?.isolated &&
-                          selected.merge?.state === "ready" && (
-                            <button
-                              className="primary success"
-                              onClick={() => {
-                                if (
-                                  window.confirm(
-                                    `确认合并到 ${selected.merge.targetBranch}？`,
-                                  )
-                                )
-                                  mergeDelivery();
-                              }}
-                            >
-                              确认合并到 {selected.merge.targetBranch}
-                            </button>
-                          )}
-                        {selected.codex?.isolated &&
                           selected.merge?.state === "merged" && (
                             <button
                               className="primary success"

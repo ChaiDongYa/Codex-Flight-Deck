@@ -1871,6 +1871,25 @@ body {
 .diff-line.deletion code { color: var(--fd-red); }
 .diff-line.hunk { background: var(--fd-blue-muted); }
 .diff-line.hunk code { color: var(--fd-blue); }
+
+/* Inspector surfaces: never fall back to the light palette in dark/system themes. */
+.execution-section, .preview-section, .merge-section { background: var(--fd-surface-muted); }
+.execution-log li, .merge-actions button, .merge-conflict .outline, .conflict-file pre { background: var(--fd-surface); border-color: var(--fd-border); color: var(--fd-text); }
+.execution-phase, .execution-log b { color: var(--fd-text) !important; }
+.execution-note, .execution-log span, .preview-heading span, .merge-section > p { color: var(--fd-text-muted) !important; }
+.merge-confirmed { background: var(--fd-blue-muted); border-color: var(--fd-blue); }
+.merge-confirmed strong, .merge-confirmed small { color: var(--fd-text); }
+.dependency-section { background: var(--fd-amber-muted); }
+.dependency-gate { background: color-mix(in srgb, var(--fd-amber-muted) 70%, var(--fd-surface)); color: var(--fd-text); }
+.dependency-gate.open { background: var(--fd-green-muted); color: var(--fd-text); }
+.merge-conflict { background: var(--fd-amber-muted); border-color: var(--fd-amber); color: var(--fd-text); }
+.conflict-file { border-color: color-mix(in srgb, var(--fd-amber) 55%, var(--fd-border)); }
+.conflict-file pre { color: var(--fd-text); }
+.merge-actions { grid-template-columns: 1fr 1fr; margin-top: 10px; }
+.merge-actions button { height: 34px; border-radius: 6px; font-size: 12px; }
+.actions button { height: 36px; border-radius: 6px; font-size: 13px; }
+.execution-log { gap: 7px; margin-top: 10px; }
+.execution-log li { padding: 8px 10px; }
 @media (max-width: 1120px) {
   .content.with-inspector {
     grid-template-columns: minmax(400px, 1fr) 8px var(--inspector-width, 390px);
