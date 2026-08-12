@@ -1,4 +1,4 @@
-import { acceptTask, approveTask, createTask, getTask, listTasks, passTests, recordCodexEvent, recordCodexLaunch, returnTask } from "./db.mjs";
+import { acceptTask, approveTask, createTask, deleteTask, getTask, listTasks, passTests, recordCodexEvent, recordCodexLaunch, returnTask } from "./db.mjs";
 import { launchCodexTask } from "./codex.mjs";
 import { addProject, listProjects, setActiveProject } from "./project.mjs";
 import { execFile } from "node:child_process";
@@ -17,6 +17,8 @@ export async function api(request, response) {
     if (request.method === "POST" && url.pathname === "/api/projects") return json(response, 201, { project: addProject((await readBody(request)).path) });
     if (request.method === "POST" && url.pathname === "/api/projects/active") return json(response, 200, { project: setActiveProject((await readBody(request)).path) });
     if (request.method === "POST" && url.pathname === "/api/tasks") return json(response, 201, { task: createTask(await readBody(request)) });
+    const deleteMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
+    if (request.method === "DELETE" && deleteMatch) { deleteTask(deleteMatch[1]); return json(response, 200, { tasks: listTasks() }); }
     const launchMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/launch$/);
     if (request.method === "POST" && launchMatch) {
       const id = launchMatch[1];

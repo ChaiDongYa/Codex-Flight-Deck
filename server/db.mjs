@@ -42,6 +42,7 @@ export function createTask(input) {
   for (const dependency of input.dependencies || []) db.prepare("INSERT OR IGNORE INTO dependencies (dependent_id, prerequisite_id, gate) VALUES (?, ?, ?)").run(task.id, dependency.id, dependency.gate === "accept" ? "accept" : "test");
   return task;
 }
+export function deleteTask(id) { const task = getTask(id); if (!task) throw new Error("Task not found"); db.prepare("DELETE FROM dependencies WHERE dependent_id = ? OR prerequisite_id = ?").run(id, id); db.prepare("DELETE FROM tasks WHERE id = ?").run(id); return task; }
 export function approveTask(id) { const task = getTask(id); if (!task) throw new Error("Task not found"); if (!canRun(id)) throw new Error("任务依赖尚未满足：必须等待前置任务的验证门禁通过。"); return save({ ...task, approved: true, status: "执行中", activity: "Codex 已获准执行 · 正在准备工作目录", test: "等待执行", testTone: "neutral" }); }
 export function recordCodexLaunch(id, launch) {
   const task = getTask(id); if (!task) throw new Error("Task not found");
