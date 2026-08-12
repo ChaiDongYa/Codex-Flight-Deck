@@ -41,7 +41,7 @@ export function App() {
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [launching, setLaunching] = useState(false);
-  const selected = tasks.find((task) => task.id === selectedId) ?? tasks[0];
+  const selected = tasks.find((task) => task.id === selectedId) ?? tasks[0] ?? null;
   const visibleTasks = useMemo(() => tasks.filter((task) => (filter === "全部" || task.status === filter) && `${task.title} ${task.id}`.toLowerCase().includes(query.toLowerCase())), [tasks, filter, query]);
 
   const refreshTasks = async () => { const response = await fetch("/api/tasks"); const data = await response.json(); setTasks(data.tasks); if (data.tasks.length && !data.tasks.some((task) => task.id === selectedId)) setSelectedId(data.tasks[0].id); };
@@ -59,6 +59,7 @@ export function App() {
 
   const worktrees = tasks.filter((task) => task.status !== "已完成");
   const reviewTasks = tasks.filter((task) => task.status === "待复核");
+  if (!selected) return <div className="app-shell"><section className="workspace"><header className="topbar"><div className="project">正在读取本地任务数据…</div></header><main className="empty">正在加载 Flight Deck…</main></section></div>;
   return <div className="app-shell">
     <section className="workspace">
       <header className="topbar"><div className="project-wrap"><button className={`project ${projectOpen ? "open" : ""}`} onClick={() => setProjectOpen((open) => !open)} title={project?.path}><span className="project-mark"></span>{project ? project.name : "正在读取项目…"}<small>{project?.branch ? ` · ${project.branch}` : ""}</small><span className="chevron">⌄</span></button>{projectOpen && <div className="project-menu" role="menu"><p>本机项目</p>{projects.map((item) => <button role="menuitem" className={project?.path === item.path ? "chosen" : ""} key={item.path} onClick={() => chooseProject(item.path)}><span className="project-mark"></span>{item.name}{project?.path === item.path && <b>✓</b>}</button>)}<div className="project-divider"></div><button className="new-project" onClick={() => { setProjectOpen(false); setProjectModalOpen(true); }}>+ 添加项目</button></div>}</div><label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索任务…" /></label></header>
