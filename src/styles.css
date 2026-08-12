@@ -1347,6 +1347,16 @@ nav button span {
   color: #718096;
   font-size: 11px;
 }
+.merge-conflict { padding: 14px; border: 1px solid #f0c36b; border-radius: 8px; background: #fff8e9; color: #704d12; }
+.merge-conflict p { margin: 7px 0; font-size: 12px; }
+.merge-conflict ul { margin: 7px 0 12px; padding-left: 18px; font: 12px/1.5 ui-monospace, monospace; }
+.merge-conflict .outline { margin-right: 8px; }
+.conflict-file { margin-top: 12px; border-top: 1px solid #f0d69d; padding-top: 9px; }
+.conflict-file summary { cursor: pointer; color: #1769e9; font-size: 12px; font-weight: 700; }
+.conflict-file > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.conflict-file section { min-width: 0; }
+.conflict-file b { display: block; margin-bottom: 5px; font-size: 11px; }
+.conflict-file pre { max-height: 180px; overflow: auto; margin: 0; padding: 9px; border-radius: 5px; background: #fff; color: #4a3a20; font: 11px/1.45 ui-monospace, monospace; white-space: pre-wrap; }
 .diff-backdrop { z-index: 30; padding: 22px; }
 .diff-review-modal {
   width: min(1220px, 100%); height: min(780px, calc(100vh - 44px)); max-height: none;

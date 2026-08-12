@@ -367,8 +367,9 @@ export async function api(request, response) {
         return json(response, 400, {
           error: "请先查看真实 diff，再确认合并到目标分支。",
         });
+      const result = mergeTaskWorktree(task);
       return json(response, 200, {
-        task: recordMergeResult(task.id, mergeTaskWorktree(task)),
+        task: recordMergeResult(task.id, result),
         tasks: listTasks(),
       });
     }

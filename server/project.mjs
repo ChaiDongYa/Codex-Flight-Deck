@@ -337,6 +337,17 @@ export function mergeTaskWorktree(task) {
       { cwd: projectRoot, encoding: "utf8" },
     );
   } catch (error) {
+    const conflictFiles = tryGit(
+      ["diff", "--name-only", "--diff-filter=U"],
+      projectRoot,
+    )
+      .split("\n")
+      .filter(Boolean);
+    const conflicts = conflictFiles.map((file) => ({
+      file,
+      target: tryGit(["show", `${targetBranch}:${file}`], projectRoot),
+      task: tryGit(["show", `${prepared.branch}:${file}`], projectRoot),
+    }));
     try {
       execFileSync("git", ["merge", "--abort"], {
         cwd: projectRoot,
@@ -346,9 +357,14 @@ export function mergeTaskWorktree(task) {
     } catch {
       /* Nothing to abort. */
     }
-    throw new Error(
-      `合并未完成，已保留任务 worktree 和目标分支：${mergeError(error)}`,
-    );
+    if (conflicts.length)
+      return {
+        ...prepared,
+        state: "conflict",
+        conflicts,
+        message: "检测到合并冲突；主分支已自动回退，等待人工选择或手动解决。",
+      };
+    throw new Error(`合并未完成，已保留任务 worktree 和目标分支：${mergeError(error)}`);
   }
   return {
     ...prepared,

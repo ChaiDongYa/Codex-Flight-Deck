@@ -285,7 +285,7 @@ export function createRelease(input = {}) {
   if (!name) throw new Error("请填写版本名称。");
   const id = `REL-${Date.now().toString(36)}`;
   const now = new Date().toISOString();
-  const release = { id, name, goal: `${input.goal || ""}`.trim(), projectPath: input.projectPath || "", releaseDate: input.releaseDate || "", stage: "需求评审", stages: releaseStages.map((name) => ({ name, done: false })), createdAt: now };
+  const release = { id, name, goal: `${input.goal || ""}`.trim(), projectPath: input.projectPath || "", startDate: input.startDate || now.slice(0, 10), releaseDate: input.releaseDate || "", stage: "需求评审", stages: releaseStages.map((name) => ({ name, done: false })), createdAt: now };
   db.prepare("INSERT INTO releases (id, payload, created_at, updated_at) VALUES (?, ?, ?, ?)").run(id, JSON.stringify(release), now, now);
   return release;
 }
@@ -507,8 +507,8 @@ export function recordMergeResult(id, result) {
     throw new Error("只有真实验证通过、等待复核的任务可以合并。");
   return save({
     ...task,
-    activity: `已合并到 ${result.targetBranch}，等待人工确认交付`,
-    merge: { ...(task.merge || {}), ...result, state: "merged" },
+    activity: result.state === "conflict" ? "合并发现冲突，主分支未修改，等待人工处理" : `已合并到 ${result.targetBranch}，等待人工确认交付`,
+    merge: { ...(task.merge || {}), ...result, state: result.state },
   });
 }
 export function recordVerification(id, verification, mergePreview = null) {
