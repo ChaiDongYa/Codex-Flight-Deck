@@ -12,6 +12,7 @@ import {
   recordMergeResult,
   recordTaskPreview,
   retryTask,
+  stopCodexTask,
   recordVerification,
   recordWorkspaceEvidence,
   recordAutomationFailure,
@@ -238,6 +239,22 @@ export async function api(request, response) {
       void drainNightQueue();
       publish("tasks", { reason: "retry", id: task.id });
       return json(response, 200, { task, tasks: listTasks() });
+    }
+    const stopMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/stop$/);
+    if (request.method === "POST" && stopMatch) {
+      const task = getTask(stopMatch[1]);
+      if (!task) return json(response, 404, { error: "Task not found" });
+      const timer = taskTimeouts.get(task.id);
+      if (timer) clearTimeout(timer);
+      taskTimeouts.delete(task.id);
+      const sessionStopped = stopCodexSession(task.codex?.threadId);
+      const stoppedTask = stopCodexTask(task.id);
+      publish("tasks", { reason: "codex-stopped", id: task.id });
+      return json(response, 200, {
+        task: stoppedTask,
+        tasks: listTasks(),
+        sessionStopped,
+      });
     }
     const launchMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/launch$/);
     if (request.method === "POST" && launchMatch) {

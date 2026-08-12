@@ -172,6 +172,19 @@ export function App() {
       "retry",
       "已加入重试队列；会沿用原任务规则与 worktree。 ",
     );
+  const stopCodexTask = async () => {
+    if (
+      !window.confirm(
+        "停止当前 Codex 执行？\n\n已写入任务 worktree 的代码变更和执行日志会保留，不会自动合并到主项目。",
+      )
+    )
+      return;
+    await runAction(
+      selected.id,
+      "stop",
+      "Codex 已停止；已有 worktree 变更已保留，可修改计划后重新执行。",
+    );
+  };
   const launchPreview = async () => {
     const response = await fetch(`/api/tasks/${selected.id}/preview`, {
       method: "POST",
@@ -900,11 +913,14 @@ export function App() {
                   <div className="actions">
                     {selected.codex?.state === "running" ? (
                       <>
-                        <button className="primary" disabled>
-                          Codex 正在执行…
+                        <button
+                          className="danger-action"
+                          onClick={stopCodexTask}
+                        >
+                          ■ 停止 Codex
                         </button>
                         <small>
-                          执行中仅可查看实时动态；计划、验证、合并、删除均已锁定。
+                          停止会保留本轮 worktree 变更和日志；计划、验证、合并、删除仍会保持锁定。
                         </small>
                       </>
                     ) : selected.status === "执行中" ? (

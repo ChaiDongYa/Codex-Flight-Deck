@@ -85,6 +85,7 @@ export async function launchCodexTask(task, callbacks) {
       input: [{ type: "text", text: taskPrompt(task, workspace.isolated) }],
     });
     sessions.set(threadId, server);
+    server.child.once("exit", () => sessions.delete(threadId));
     return {
       threadId,
       turnId: startedTurn.turn.id,

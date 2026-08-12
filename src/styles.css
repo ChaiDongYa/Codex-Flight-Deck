@@ -748,6 +748,15 @@ nav button span {
   border-color: #168854;
   background: #168854;
 }
+.actions .danger-action {
+  border-color: #d94b57;
+  background: #fff;
+  color: #bf3340;
+}
+.actions .danger-action:hover {
+  border-color: #bf3340;
+  background: #fff5f5;
+}
 .actions small {
   text-align: center;
   color: #7e8998;
