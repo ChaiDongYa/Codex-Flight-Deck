@@ -475,10 +475,14 @@ export function App() {
                 </div>
                 <div className="list-actions">
                   <button
-                    className={`outline actionable-filter ${onlyActionable ? "active" : ""}`}
-                    onClick={() => setOnlyActionable((value) => !value)}
+                    className="primary create-delivery"
+                    onClick={() => {
+                      setQuickMode(false);
+                      setComposerStep(1);
+                      setComposerOpen(true);
+                    }}
                   >
-                    仅看待我处理
+                    + 新建交付
                   </button>
                   <button
                     className="outline quick-delivery"
@@ -489,16 +493,6 @@ export function App() {
                     }}
                   >
                     ⚡ 快速任务
-                  </button>
-                  <button
-                    className="primary create-delivery"
-                    onClick={() => {
-                      setQuickMode(false);
-                      setComposerStep(1);
-                      setComposerOpen(true);
-                    }}
-                  >
-                    + 新建交付
                   </button>
                   <div className="filter-wrap">
                     <button
@@ -550,6 +544,12 @@ export function App() {
                       </div>
                     )}
                   </div>
+                  <button
+                    className={`outline actionable-filter ${onlyActionable ? "active" : ""}`}
+                    onClick={() => setOnlyActionable((value) => !value)}
+                  >
+                    仅看待我处理
+                  </button>
                 </div>
               </div>
               <div className="table-head">

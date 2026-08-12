@@ -286,14 +286,14 @@ nav button span {
   min-height: 0;
 }
 .task-list {
-  padding: 30px 28px;
+  padding: 28px 34px 36px;
   min-width: 0;
 }
 .list-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 26px;
 }
 .list-heading h1 {
   margin: 0;
@@ -420,7 +420,7 @@ nav button span {
 }
 .filter-trigger {
   height: 35px;
-  min-width: 128px;
+  min-width: 116px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -511,8 +511,10 @@ nav button span {
 .table-head,
 .task-row {
   display: grid;
-  grid-template-columns: 2.15fr 1.1fr 1.25fr 0.75fr;
-  column-gap: 16px;
+  grid-template-columns:
+    minmax(240px, 2.2fr) minmax(190px, 1.35fr) minmax(145px, 1fr)
+    minmax(105px, 0.7fr);
+  column-gap: 18px;
   align-items: center;
 }
 .table-head {
@@ -527,7 +529,7 @@ nav button span {
   border: 0;
   border-bottom: 1px solid #e7ebf0;
   background: transparent;
-  padding: 16px 12px;
+  padding: 17px 14px;
   color: #29364c;
   text-align: left;
   transition:
@@ -1689,6 +1691,8 @@ body {
 .list-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .create-delivery {
