@@ -8,6 +8,8 @@ import {
   listAutoRunnableTasks,
   listTasks,
   listReleases,
+  listReleaseStages,
+  updateReleaseStages,
   updateReleaseStage,
   recordCodexEvent,
   recordCodexLaunch,
@@ -172,6 +174,12 @@ export async function api(request, response) {
       return json(response, 200, { tasks: listTasks() });
     if (request.method === "GET" && url.pathname === "/api/releases")
       return json(response, 200, { releases: listReleases(url.searchParams.get("projectPath") || "") });
+    if (request.method === "GET" && url.pathname === "/api/release-stages")
+      return json(response, 200, { stages: listReleaseStages(url.searchParams.get("projectPath") || "") });
+    if (request.method === "PUT" && url.pathname === "/api/release-stages") {
+      const body = await readBody(request);
+      return json(response, 200, { stages: updateReleaseStages(body.projectPath || "", body.stages) });
+    }
     if (request.method === "POST" && url.pathname === "/api/releases")
       return json(response, 201, { release: createRelease(await readBody(request)) });
     const releaseStageMatch = url.pathname.match(/^\/api\/releases\/([^/]+)\/stage$/);

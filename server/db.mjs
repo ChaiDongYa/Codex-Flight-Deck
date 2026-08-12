@@ -23,6 +23,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS dependencies (dependent_id TEXT NOT NULL, prerequisite_id TEXT NOT NULL, gate TEXT NOT NULL DEFAULT 'test', PRIMARY KEY (dependent_id, prerequisite_id));
   CREATE TABLE IF NOT EXISTS releases (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS release_stage_settings (project_path TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
 `);
 
 function parse(row) {
@@ -268,11 +269,78 @@ export function listTasks() {
       summary: deliverySummary(task),
     }));
 }
-const releaseStages = ["需求评审", "需求反讲", "技术方案", "开发阶段", "提测阶段", "UAT 阶段", "上线准备", "已上线 / 复盘"];
+// This is a deliberately broad default, not a mandatory process. Each project
+// stores its own ordered stage list and can hide any stage it does not use.
+const defaultReleaseStages = [
+  "需求澄清 / 评审",
+  "UI / UX 设计",
+  "UI / UX 评审",
+  "技术方案 / 架构评审",
+  "开发阶段",
+  "代码评审",
+  "提测准备",
+  "测试阶段",
+  "UAT / 业务验收",
+  "发布准备 / 变更评审",
+  "已上线 / 复盘",
+];
+
+function normaliseReleaseStages(stages) {
+  const seen = new Set();
+  const value = Array.isArray(stages) ? stages : [];
+  const normalised = value
+    .map((stage) => ({
+      name: `${stage?.name || ""}`.trim(),
+      visible: stage?.visible !== false,
+    }))
+    .filter((stage) => stage.name && !seen.has(stage.name) && seen.add(stage.name));
+  return normalised.length
+    ? normalised
+    : defaultReleaseStages.map((name) => ({ name, visible: true }));
+}
+
+function stagesForProject(projectPath = "") {
+  const row = db
+    .prepare("SELECT payload FROM release_stage_settings WHERE project_path = ?")
+    .get(projectPath || "");
+  return row
+    ? normaliseReleaseStages(parse(row))
+    : defaultReleaseStages.map((name) => ({ name, visible: true }));
+}
+
+export function listReleaseStages(projectPath = "") {
+  return stagesForProject(projectPath);
+}
+
+export function updateReleaseStages(projectPath = "", stages = []) {
+  const normalised = normaliseReleaseStages(stages);
+  if (!normalised.some((stage) => stage.visible))
+    throw new Error("请至少展示一个研发阶段。");
+  const now = new Date().toISOString();
+  db.prepare(
+    "INSERT INTO release_stage_settings (project_path, payload, updated_at) VALUES (?, ?, ?) ON CONFLICT(project_path) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at",
+  ).run(projectPath || "", JSON.stringify(normalised), now);
+  return normalised;
+}
+
+function enrichRelease(release) {
+  const stages = stagesForProject(release.projectPath);
+  const currentIndex = stages.findIndex((item) => item.name === release.stage);
+  return {
+    ...release,
+    // Keep an old stage value intact when an admin hides or removes it, so a
+    // historical release is never silently moved to a different process step.
+    stages: stages.map((item, index) => ({
+      ...item,
+      done: currentIndex >= 0 && index <= currentIndex,
+    })),
+  };
+}
 export function listReleases(projectPath = "") {
   return db.prepare("SELECT payload FROM releases ORDER BY updated_at DESC").all().map(parse)
     .filter((release) => !projectPath || release.projectPath === projectPath)
     .map((release) => {
+      release = enrichRelease(release);
       const linked = listTasks().filter((task) => task.versionId === release.id);
       const blocked = linked.filter((task) => task.status === "已阻塞").length;
       const complete = linked.filter((task) => task.status === "已完成").length;
@@ -285,7 +353,9 @@ export function createRelease(input = {}) {
   if (!name) throw new Error("请填写版本名称。");
   const id = `REL-${Date.now().toString(36)}`;
   const now = new Date().toISOString();
-  const release = { id, name, goal: `${input.goal || ""}`.trim(), projectPath: input.projectPath || "", startDate: input.startDate || now.slice(0, 10), releaseDate: input.releaseDate || "", stage: "需求评审", stages: releaseStages.map((name) => ({ name, done: false })), createdAt: now };
+  const stages = stagesForProject(input.projectPath || "");
+  const initialStage = stages.find((stage) => stage.visible)?.name || stages[0].name;
+  const release = { id, name, goal: `${input.goal || ""}`.trim(), projectPath: input.projectPath || "", startDate: input.startDate || now.slice(0, 10), releaseDate: input.releaseDate || "", stage: initialStage, stages: stages.map((stage) => ({ ...stage, done: false })), createdAt: now };
   db.prepare("INSERT INTO releases (id, payload, created_at, updated_at) VALUES (?, ?, ?, ?)").run(id, JSON.stringify(release), now, now);
   return release;
 }
@@ -293,9 +363,10 @@ export function updateReleaseStage(id, stage) {
   const row = db.prepare("SELECT payload FROM releases WHERE id = ?").get(id);
   const release = parse(row);
   if (!release) throw new Error("版本不存在。");
-  const currentIndex = releaseStages.indexOf(stage);
+  const stages = stagesForProject(release.projectPath);
+  const currentIndex = stages.findIndex((item) => item.name === stage);
   if (currentIndex < 0) throw new Error("未知的版本阶段。");
-  const updated = { ...release, stage, stages: releaseStages.map((name, index) => ({ name, done: index <= currentIndex })) };
+  const updated = { ...release, stage, stages: stages.map((item, index) => ({ ...item, done: index <= currentIndex })) };
   db.prepare("UPDATE releases SET payload = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(updated), new Date().toISOString(), id);
   return updated;
 }

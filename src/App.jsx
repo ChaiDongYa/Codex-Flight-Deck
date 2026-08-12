@@ -61,11 +61,12 @@ function parseUnifiedDiff(lines = []) {
 }
 
 export function App() {
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem("flight-deck-theme") || "system",
-  );
   const [tasks, setTasks] = useState([]);
   const [releases, setReleases] = useState([]);
+  const [releaseStages, setReleaseStages] = useState([]);
+  const [releaseStageSettingsOpen, setReleaseStageSettingsOpen] = useState(false);
+  const [releaseStageDraft, setReleaseStageDraft] = useState([]);
+  const [newReleaseStage, setNewReleaseStage] = useState("");
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [releaseDraft, setReleaseDraft] = useState({ name: "", goal: "", startDate: new Date().toISOString().slice(0, 10), releaseDate: "" });
   const [releaseLayout, setReleaseLayout] = useState("board");
@@ -168,6 +169,12 @@ export function App() {
     const data = await response.json();
     setReleases(data.releases || []);
   };
+  const refreshReleaseStages = async (projectPath = project?.path) => {
+    const response = await fetch(`/api/release-stages?projectPath=${encodeURIComponent(projectPath || "")}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "读取研发阶段失败");
+    setReleaseStages(data.stages || []);
+  };
   const refreshQueue = async () => {
     const response = await fetch("/api/queue");
     if (response.ok) setQueue(await response.json());
@@ -176,10 +183,14 @@ export function App() {
     refreshTasks().catch(() => setToast("无法读取本地 SQLite 数据库。"));
     refreshProjects().catch(() => setToast("无法读取真实 Git 项目。"));
     refreshReleases().catch(() => {});
+    refreshReleaseStages().catch(() => {});
     refreshQueue().catch(() => {});
   }, []);
   useEffect(() => {
-    if (project?.path) refreshReleases(project.path).catch(() => {});
+    if (project?.path) {
+      refreshReleases(project.path).catch(() => {});
+      refreshReleaseStages(project.path).catch(() => {});
+    }
   }, [project?.path]);
   useEffect(() => {
     const source = new EventSource("/api/events");
@@ -241,7 +252,34 @@ export function App() {
     await refreshReleases();
     setToast(`已创建版本 ${data.release.name}`);
   };
-  const releaseStageNames = ["需求评审", "需求反讲", "技术方案", "开发阶段", "提测阶段", "UAT 阶段", "上线准备", "已上线 / 复盘"];
+  const visibleReleaseStages = releaseStages.filter((stage) => stage.visible);
+  const openReleaseStageSettings = () => {
+    setReleaseStageDraft(releaseStages.map((stage) => ({ ...stage })));
+    setNewReleaseStage("");
+    setReleaseStageSettingsOpen(true);
+  };
+  const moveReleaseStage = (index, direction) => {
+    const target = index + direction;
+    if (target < 0 || target >= releaseStageDraft.length) return;
+    setReleaseStageDraft((stages) => {
+      const next = [...stages];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const saveReleaseStages = async () => {
+    const response = await fetch("/api/release-stages", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectPath: project?.path || "", stages: releaseStageDraft }),
+    });
+    const data = await response.json();
+    if (!response.ok) return setToast(data.error || "保存研发阶段失败");
+    setReleaseStages(data.stages || []);
+    setReleaseStageSettingsOpen(false);
+    await refreshReleases();
+    setToast("研发阶段已更新：看板、列表和甘特图已同步。");
+  };
   const tasksForRelease = (releaseId) => tasks.filter((task) => task.versionId === releaseId);
   const releaseRange = useMemo(() => {
     const today = new Date();
@@ -470,11 +508,6 @@ export function App() {
   );
   const worktrees = projectTasks.filter((task) => task.status !== "已完成");
   const reviewTasks = projectTasks.filter((task) => task.status === "待复核");
-  const cycleTheme = () => {
-    const next = theme === "system" ? "light" : theme === "light" ? "dark" : "system";
-    setTheme(next);
-    localStorage.setItem("flight-deck-theme", next);
-  };
   if (!tasksLoaded)
     return (
       <div className="app-shell">
@@ -487,7 +520,7 @@ export function App() {
       </div>
     );
   return (
-    <div className={`app-shell theme-${theme}`}>
+    <div className="app-shell theme-system">
       <section className="workspace">
         <header className="topbar">
           <div className="project-wrap">
@@ -587,14 +620,6 @@ export function App() {
               placeholder="搜索任务…"
             />
           </label>
-          <button
-            className="theme-control"
-            onClick={cycleTheme}
-            title="切换 Flight Deck 主题"
-            aria-label="切换 Flight Deck 主题"
-          >
-            {theme === "system" ? "◐ 跟随系统" : theme === "dark" ? "☾ 深色" : "☀ 浅色"}
-          </button>
           <button
             className={`queue-control ${queue.paused ? "paused" : ""}`}
             onClick={toggleQueue}
@@ -1346,10 +1371,10 @@ export function App() {
         {view === "releases" && (
           <main className="standalone-view release-view">
             <header className="view-header">
-              <div><p className="eyebrow">版本与发布</p><h1>版本发布</h1><p>用研发阶段看板、列表与甘特图统一管理版本节奏和 Codex 交付。</p></div>
-              <div className="release-header-actions"><div className="view-switch" role="tablist" aria-label="版本视图"><button className={releaseLayout === "board" ? "active" : ""} onClick={() => setReleaseLayout("board")}>看板</button><button className={releaseLayout === "list" ? "active" : ""} onClick={() => setReleaseLayout("list")}>列表</button><button className={releaseLayout === "gantt" ? "active" : ""} onClick={() => setReleaseLayout("gantt")}>甘特图</button></div><button className="primary create-delivery" onClick={() => setReleaseOpen(true)}>+ 新建版本</button></div>
+              <div><p className="eyebrow">版本与发布</p><h1>版本发布</h1><p>用可配置的研发阶段看板、列表与甘特图统一管理版本节奏和 Codex 交付。</p></div>
+              <div className="release-header-actions"><div className="view-switch" role="tablist" aria-label="版本视图"><button className={releaseLayout === "board" ? "active" : ""} onClick={() => setReleaseLayout("board")}>看板</button><button className={releaseLayout === "list" ? "active" : ""} onClick={() => setReleaseLayout("list")}>列表</button><button className={releaseLayout === "gantt" ? "active" : ""} onClick={() => setReleaseLayout("gantt")}>甘特图</button></div><button className="outline" onClick={openReleaseStageSettings}>配置阶段</button><button className="primary create-delivery" onClick={() => setReleaseOpen(true)}>+ 新建版本</button></div>
             </header>
-            {releases.length ? <>{releaseLayout === "board" && <div className="release-board">{releaseStageNames.map((stage) => { const column = releases.filter((release) => release.stage === stage); return <section className="release-lane" key={stage} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedReleaseId) updateReleaseStage(draggedReleaseId, stage); setDraggedReleaseId(null); }}><header><span>{stage}</span><b>{column.length}</b></header><div className="release-lane-cards">{column.map((release) => <article className="release-board-card" draggable key={release.id} onDragStart={() => setDraggedReleaseId(release.id)} onDragEnd={() => setDraggedReleaseId(null)} onClick={() => updateReleaseStage(release.id, release.stage)}><div className="card-top"><span className={`status ${release.health === "有风险" ? "blocked" : "ready"}`}>{release.health}</span><small>{release.releaseDate || "未设日期"}</small></div><h2>{release.name}</h2><p>{release.goal || "未填写版本目标"}</p><footer><span>{release.tasks.complete}/{release.tasks.total} 已完成</span><span>{tasksForRelease(release.id).filter((task) => task.status === "执行中").length} 执行中</span></footer><select value={release.stage} onClick={(event) => event.stopPropagation()} onChange={(event) => updateReleaseStage(release.id, event.target.value)}>{releaseStageNames.map((name) => <option key={name}>{name}</option>)}</select></article>)}</div></section>; })}</div>}{releaseLayout === "list" && <div className="release-list-view"><div className="release-list-head"><span>版本</span><span>阶段</span><span>计划上线</span><span>交付</span><span>操作</span></div>{releases.map((release) => <article className="release-list-row" key={release.id}><div><b>{release.name}</b><small>{release.goal || "未填写版本目标"}</small></div><select value={release.stage} onChange={(event) => updateReleaseStage(release.id, event.target.value)}>{releaseStageNames.map((name) => <option key={name}>{name}</option>)}</select><span>{release.releaseDate || "未设置"}</span><span>{release.tasks.complete}/{release.tasks.total} 已完成</span><button className="outline" onClick={() => { setReleaseLayout("board"); }}>查看看板</button></article>)}</div>}{releaseLayout === "gantt" && <div className="release-gantt"><div className="gantt-toolbar"><span>时间粒度</span>{[["day", "日"], ["week", "周"], ["month", "月"]].map(([scale, label]) => <button className={ganttScale === scale ? "active" : ""} key={scale} onClick={() => setGanttScale(scale)}>{label}</button>)}</div><div className="gantt-header"><div>版本</div><div className={`gantt-timescale ${ganttScale}`}>{Array.from({ length: ganttScale === "day" ? 14 : ganttScale === "week" ? 10 : 8 }, (_, index) => { const date = new Date(releaseRange.start); if (ganttScale === "day") date.setDate(date.getDate() + index); else if (ganttScale === "week") date.setDate(date.getDate() + index * 7); else date.setMonth(date.getMonth() + index); return <span key={index}>{ganttScale === "month" ? `${date.getMonth() + 1}月` : ganttScale === "week" ? `${date.getMonth() + 1}/${date.getDate()}` : `${date.getMonth() + 1}/${date.getDate()}`}</span>; })}</div></div>{releases.map((release) => <div className="gantt-row" key={release.id}><div><b>{release.name}</b><small>{release.stage} · {release.releaseDate || "未设上线日"}</small></div><div className="gantt-track"><button className="gantt-bar" style={releaseBarStyle(release)} title={`${release.name}：${release.startDate || "未设开始日"} 至 ${release.releaseDate || "未设上线日"}`} onClick={() => updateReleaseStage(release.id, release.stage)}>{release.name}</button></div></div>)}</div>}</> : <div className="page-empty"><b>还没有版本计划</b><p>先创建版本，再把 Codex 任务绑定到对应版本。</p><button className="outline" onClick={() => setReleaseOpen(true)}>+ 新建版本</button></div>}
+            {releases.length ? <>{releaseLayout === "board" && <div className="release-board">{visibleReleaseStages.map((stageSetting) => { const stage = stageSetting.name; const column = releases.filter((release) => release.stage === stage); return <section className="release-lane" key={stage} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedReleaseId) updateReleaseStage(draggedReleaseId, stage); setDraggedReleaseId(null); }}><header><span>{stage}</span><b>{column.length}</b></header><div className="release-lane-cards">{column.map((release) => <article className="release-board-card" draggable key={release.id} onDragStart={() => setDraggedReleaseId(release.id)} onDragEnd={() => setDraggedReleaseId(null)}><div className="card-top"><span className={`status ${release.health === "有风险" ? "blocked" : "ready"}`}>{release.health}</span><small>{release.releaseDate || "未设日期"}</small></div><h2>{release.name}</h2><p>{release.goal || "未填写版本目标"}</p><footer><span>{release.tasks.complete}/{release.tasks.total} 已完成</span><span>{tasksForRelease(release.id).filter((task) => task.status === "执行中").length} 执行中</span></footer><select value={release.stage} onChange={(event) => updateReleaseStage(release.id, event.target.value)}>{visibleReleaseStages.map((item) => <option key={item.name}>{item.name}</option>)}</select></article>)}</div></section>; })}</div>}{releaseLayout === "list" && <div className="release-list-view"><div className="release-list-head"><span>版本</span><span>阶段</span><span>计划上线</span><span>交付</span><span>操作</span></div>{releases.map((release) => <article className="release-list-row" key={release.id}><div><b>{release.name}</b><small>{release.goal || "未填写版本目标"}</small></div><select value={release.stage} onChange={(event) => updateReleaseStage(release.id, event.target.value)}>{!visibleReleaseStages.some((stage) => stage.name === release.stage) && <option value={release.stage}>{release.stage}（已隐藏）</option>}{visibleReleaseStages.map((item) => <option key={item.name}>{item.name}</option>)}</select><span>{release.releaseDate || "未设置"}</span><span>{release.tasks.complete}/{release.tasks.total} 已完成</span><button className="outline" onClick={() => { setReleaseLayout("board"); }}>查看看板</button></article>)}</div>}{releaseLayout === "gantt" && <div className="release-gantt"><div className="gantt-toolbar"><span>时间粒度</span>{[["day", "日"], ["week", "周"], ["month", "月"]].map(([scale, label]) => <button className={ganttScale === scale ? "active" : ""} key={scale} onClick={() => setGanttScale(scale)}>{label}</button>)}</div><div className="gantt-header"><div>版本</div><div className={`gantt-timescale ${ganttScale}`}>{Array.from({ length: ganttScale === "day" ? 14 : ganttScale === "week" ? 10 : 8 }, (_, index) => { const date = new Date(releaseRange.start); if (ganttScale === "day") date.setDate(date.getDate() + index); else if (ganttScale === "week") date.setDate(date.getDate() + index * 7); else date.setMonth(date.getMonth() + index); return <span key={index}>{ganttScale === "month" ? `${date.getMonth() + 1}月` : ganttScale === "week" ? `${date.getMonth() + 1}/${date.getDate()}` : `${date.getMonth() + 1}/${date.getDate()}`}</span>; })}</div></div>{releases.map((release) => <div className="gantt-row" key={release.id}><div><b>{release.name}</b><small>{release.stage} · {release.releaseDate || "未设上线日"}</small></div><div className="gantt-track"><button className="gantt-bar" style={releaseBarStyle(release)} title={`${release.name}：${release.startDate || "未设开始日"} 至 ${release.releaseDate || "未设上线日"}`}>{release.name}</button></div></div>)}</div>}</> : <div className="page-empty"><b>还没有版本计划</b><p>先创建版本，再把 Codex 任务绑定到对应版本。</p><button className="outline" onClick={() => setReleaseOpen(true)}>+ 新建版本</button></div>}
           </main>
         )}
       </section>
@@ -1741,7 +1766,7 @@ export function App() {
             <button className="modal-close" onClick={() => setReleaseOpen(false)}>×</button>
             <div className="modal-kicker">版本与发布</div>
             <h2 id="release-title">新建版本</h2>
-            <p className="description">默认生成需求评审、需求反讲、技术方案、开发、提测、UAT、上线准备与复盘阶段。</p>
+            <p className="description">会从此项目当前的研发阶段模板创建版本；可在「配置阶段」中随时调整展示与顺序。</p>
             <div className="form-stack">
               <label>版本名称<input autoFocus value={releaseDraft.name} onChange={(event) => setReleaseDraft({ ...releaseDraft, name: event.target.value })} placeholder="例如：v1.8.0" /></label>
               <label>版本目标<textarea value={releaseDraft.goal} onChange={(event) => setReleaseDraft({ ...releaseDraft, goal: event.target.value })} placeholder="本版本解决什么问题、交付什么价值？" /></label>
@@ -1749,6 +1774,27 @@ export function App() {
               <label>计划上线日期<input type="date" value={releaseDraft.releaseDate} onChange={(event) => setReleaseDraft({ ...releaseDraft, releaseDate: event.target.value })} /></label>
             </div>
             <footer className="modal-actions"><button className="outline" onClick={() => setReleaseOpen(false)}>取消</button><span></span><button className="primary" onClick={createRelease}>创建版本</button></footer>
+          </section>
+        </div>
+      )}
+      {releaseStageSettingsOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal stage-settings-modal" role="dialog" aria-modal="true" aria-labelledby="stage-settings-title">
+            <button className="modal-close" onClick={() => setReleaseStageSettingsOpen(false)} aria-label="关闭阶段配置">×</button>
+            <div className="modal-kicker">项目级研发流程</div>
+            <h2 id="stage-settings-title">配置版本阶段</h2>
+            <p className="description">阶段顺序同时决定看板列和版本推进顺序。取消展示只会隐藏列，不会移动已有版本。</p>
+            <div className="stage-settings-list">
+              {releaseStageDraft.map((stage, index) => (
+                <div className="stage-settings-row" key={stage.name}>
+                  <label className="stage-visible"><input type="checkbox" checked={stage.visible} onChange={(event) => setReleaseStageDraft((stages) => stages.map((item, itemIndex) => itemIndex === index ? { ...item, visible: event.target.checked } : item))} /><span>{stage.visible ? "展示" : "隐藏"}</span></label>
+                  <b>{stage.name}</b>
+                  <div className="stage-order-actions"><button className="outline" aria-label={`上移 ${stage.name}`} disabled={index === 0} onClick={() => moveReleaseStage(index, -1)}>↑</button><button className="outline" aria-label={`下移 ${stage.name}`} disabled={index === releaseStageDraft.length - 1} onClick={() => moveReleaseStage(index, 1)}>↓</button><button className="outline danger" aria-label={`删除 ${stage.name}`} disabled={releaseStageDraft.length <= 1} onClick={() => setReleaseStageDraft((stages) => stages.filter((_, itemIndex) => itemIndex !== index))}>删除</button></div>
+                </div>
+              ))}
+            </div>
+            <div className="add-stage-row"><input value={newReleaseStage} onChange={(event) => setNewReleaseStage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const name = newReleaseStage.trim(); if (name && !releaseStageDraft.some((stage) => stage.name === name)) { setReleaseStageDraft((stages) => [...stages, { name, visible: true }]); setNewReleaseStage(""); } } }} placeholder="例如：安全 / 合规评审" /><button className="outline" onClick={() => { const name = newReleaseStage.trim(); if (!name) return; if (releaseStageDraft.some((stage) => stage.name === name)) return setToast("阶段名称不能重复"); setReleaseStageDraft((stages) => [...stages, { name, visible: true }]); setNewReleaseStage(""); }}>+ 添加阶段</button></div>
+            <footer className="modal-actions"><button className="outline" onClick={() => setReleaseStageSettingsOpen(false)}>取消</button><span></span><button className="primary" onClick={saveReleaseStages}>保存阶段配置</button></footer>
           </section>
         </div>
       )}
