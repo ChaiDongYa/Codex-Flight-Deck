@@ -1,9 +1,11 @@
 import { acceptTask, approveTask, createTask, getTask, listTasks, passTests, recordCodexEvent, recordCodexLaunch, returnTask } from "./db.mjs";
 import { launchCodexTask } from "./codex.mjs";
 import { addProject, listProjects, setActiveProject } from "./project.mjs";
+import { execFile } from "node:child_process";
 
 const json = (response, status, payload) => { response.statusCode = status; response.setHeader("Content-Type", "application/json; charset=utf-8"); response.end(JSON.stringify(payload)); return true; };
 const readBody = (request) => new Promise((resolve, reject) => { let data = ""; request.on("data", (chunk) => data += chunk); request.on("end", () => { try { resolve(data ? JSON.parse(data) : {}); } catch (error) { reject(error); } }); request.on("error", reject); });
+const pickFolder = () => new Promise((resolve, reject) => execFile("osascript", ["-e", "POSIX path of (choose folder with prompt \"选择要接入 Flight Deck 的项目文件夹\")"], (error, stdout) => error ? reject(error) : resolve(stdout.trim())));
 
 export async function api(request, response) {
   const url = new URL(request.url, "http://localhost");
@@ -11,6 +13,7 @@ export async function api(request, response) {
   try {
     if (request.method === "GET" && url.pathname === "/api/tasks") return json(response, 200, { tasks: listTasks() });
     if (request.method === "GET" && url.pathname === "/api/projects") return json(response, 200, listProjects());
+    if (request.method === "POST" && url.pathname === "/api/projects/pick") return json(response, 200, { path: await pickFolder() });
     if (request.method === "POST" && url.pathname === "/api/projects") return json(response, 201, { project: addProject((await readBody(request)).path) });
     if (request.method === "POST" && url.pathname === "/api/projects/active") return json(response, 200, { project: setActiveProject((await readBody(request)).path) });
     if (request.method === "POST" && url.pathname === "/api/tasks") return json(response, 201, { task: createTask(await readBody(request)) });
