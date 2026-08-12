@@ -57,12 +57,63 @@ export function createTaskWorktree(task) {
   const project = getProject(task.projectPath);
   if (project.executionMode === "shared") return { ...project, branch: "共享工作目录", workspacePath: project.path, isolated: false };
   const branch = `flight-deck/${task.id.toLowerCase()}`;
+  const targetBranch = task.merge?.targetBranch || project.branch;
   const directory = `${project.path}/.flight-deck-worktrees/${task.id}`;
   try {
     const existing = git(["worktree", "list", "--porcelain"], project.path);
-    if (!existing.includes(`worktree ${directory}\n`)) execFileSync("git", ["worktree", "add", "-b", branch, directory, project.branch], { cwd: project.path, encoding: "utf8" });
+    if (!existing.includes(`worktree ${directory}\n`)) execFileSync("git", ["worktree", "add", "-b", branch, directory, targetBranch], { cwd: project.path, encoding: "utf8" });
   } catch (error) { throw new Error(`无法创建 Git worktree：${error.stderr?.trim() || error.message}`); }
-  return { ...project, branch, workspacePath: directory, isolated: true };
+  return { ...project, branch, targetBranch, workspacePath: directory, isolated: true };
+}
+
+function mergeError(error) { return error.stderr?.trim() || error.stdout?.trim() || error.message || "未知 Git 错误"; }
+function taskBranch(task) { return task.codex?.branch || `flight-deck/${task.id.toLowerCase()}`; }
+function mergeTarget(task, projectRoot) { return task.merge?.targetBranch || tryGit(["branch", "--show-current"], projectRoot); }
+function targetWorkspaceDirty(projectRoot) {
+  return git(["status", "--porcelain"], projectRoot).split("\n").filter(Boolean).filter((line) => !line.slice(3).startsWith(".flight-deck-worktrees/"));
+}
+function ensureTaskCommit(task, workspacePath) {
+  const dirty = git(["status", "--porcelain"], workspacePath);
+  if (!dirty) return { committed: false, commit: git(["rev-parse", "HEAD"], workspacePath) };
+  try {
+    execFileSync("git", ["add", "-A"], { cwd: workspacePath, encoding: "utf8" });
+    execFileSync("git", ["commit", "-m", `Flight Deck ${task.id}: ${task.title}`], { cwd: workspacePath, encoding: "utf8" });
+  } catch (error) { throw new Error(`无法为任务变更创建 Git 提交：${mergeError(error)}`); }
+  return { committed: true, commit: git(["rev-parse", "HEAD"], workspacePath) };
+}
+
+export function prepareTaskMerge(task, { commit = false } = {}) {
+  if (!task.codex?.isolated || !task.codex?.workspacePath) throw new Error("此任务未在独立 Git worktree 中执行，不能安全合并。");
+  const workspacePath = task.codex.workspacePath;
+  // In a linked worktree, rev-parse points to the worktree itself. Merge operations
+  // must happen in the original project checkout, where the target branch is checked out.
+  const projectRoot = getProject(task.projectPath).path;
+  const targetBranch = mergeTarget(task, projectRoot);
+  const branch = taskBranch(task);
+  if (!targetBranch) throw new Error("找不到任务创建时的目标分支，无法合并。");
+  if (!tryGit(["rev-parse", "--verify", targetBranch], projectRoot)) throw new Error(`目标分支不存在：${targetBranch}`);
+  const commitResult = commit ? ensureTaskCommit(task, workspacePath) : null;
+  const diffArgs = commit ? ["diff", "--no-ext-diff", "--unified=3", `${targetBranch}...${branch}`] : ["diff", "--no-ext-diff", "--unified=3", targetBranch, "--"];
+  const statArgs = commit ? ["diff", "--stat", `${targetBranch}...${branch}`] : ["diff", "--stat", targetBranch, "--"];
+  const diffStat = git(statArgs, workspacePath) || "没有可合并的代码变更。";
+  const diff = git(diffArgs, workspacePath).slice(-24000);
+  return { state: diff ? "ready" : "empty", targetBranch, branch, commit: commitResult?.commit || tryGit(["rev-parse", "HEAD"], workspacePath), committed: Boolean(commitResult?.committed), diffStat, diff, preparedAt: new Date().toISOString() };
+}
+
+export function mergeTaskWorktree(task) {
+  const prepared = prepareTaskMerge(task, { commit: true });
+  if (prepared.state === "empty") return { ...prepared, state: "merged", mergedAt: new Date().toISOString(), message: "任务没有产生需要合并的 Git 变更。" };
+  const projectRoot = getProject(task.projectPath).path;
+  const currentBranch = git(["branch", "--show-current"], projectRoot);
+  if (currentBranch !== prepared.targetBranch) throw new Error(`当前项目检出在 ${currentBranch || "分离 HEAD"}；请先切换回 ${prepared.targetBranch} 后再合并。`);
+  if (targetWorkspaceDirty(projectRoot).length) throw new Error("目标分支存在未提交改动。为避免覆盖文件，请先提交、暂存或清理这些改动后再合并。");
+  try {
+    execFileSync("git", ["merge", "--no-ff", prepared.branch, "-m", `Merge Flight Deck ${task.id}: ${task.title}`], { cwd: projectRoot, encoding: "utf8" });
+  } catch (error) {
+    try { execFileSync("git", ["merge", "--abort"], { cwd: projectRoot, encoding: "utf8", stdio: "ignore" }); } catch { /* Nothing to abort. */ }
+    throw new Error(`合并未完成，已保留任务 worktree 和目标分支：${mergeError(error)}`);
+  }
+  return { ...prepared, state: "merged", mergedAt: new Date().toISOString(), targetHead: git(["rev-parse", "--short", "HEAD"], projectRoot) };
 }
 
 export function inspectWorkspace(workspacePath) {

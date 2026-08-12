@@ -1,7 +1,7 @@
-import { acceptTask, approveTask, createTask, deleteTask, getTask, listTasks, recordCodexEvent, recordCodexLaunch, recordVerification, recordWorkspaceEvidence, returnTask } from "./db.mjs";
+import { acceptTask, approveTask, createTask, deleteTask, getTask, listTasks, recordCodexEvent, recordCodexLaunch, recordMergePreview, recordMergeResult, recordVerification, recordWorkspaceEvidence, returnTask } from "./db.mjs";
 import { launchCodexTask } from "./codex.mjs";
 import { addProject, listProjects, setActiveProject } from "./project.mjs";
-import { inspectWorkspace, runProjectVerification } from "./project.mjs";
+import { inspectWorkspace, mergeTaskWorktree, prepareTaskMerge, runProjectVerification } from "./project.mjs";
 import { execFile } from "node:child_process";
 
 const json = (response, status, payload) => { response.statusCode = status; response.setHeader("Content-Type", "application/json; charset=utf-8"); response.end(JSON.stringify(payload)); return true; };
@@ -31,7 +31,11 @@ export async function api(request, response) {
       return json(response, 200, { task: recordCodexLaunch(id, launch), tasks: listTasks() });
     }
     const verifyMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/verify$/);
-    if (request.method === "POST" && verifyMatch) { const task = getTask(verifyMatch[1]); if (!task?.codex?.workspacePath) return json(response, 400, { error: "请先完成一次 Codex 执行，才能运行真实验证。" }); const verification = await runProjectVerification(task.codex.workspacePath); recordWorkspaceEvidence(task.id, inspectWorkspace(task.codex.workspacePath)); return json(response, 200, { task: recordVerification(task.id, verification), tasks: listTasks() }); }
+    if (request.method === "POST" && verifyMatch) { const task = getTask(verifyMatch[1]); if (!task?.codex?.workspacePath) return json(response, 400, { error: "请先完成一次 Codex 执行，才能运行真实验证。" }); const verification = await runProjectVerification(task.codex.workspacePath); recordWorkspaceEvidence(task.id, inspectWorkspace(task.codex.workspacePath)); let mergeResult = null; if (verification.available && verification.exitCode === 0 && task.merge?.mode === "auto") mergeResult = mergeTaskWorktree(task); else if (verification.available && verification.exitCode === 0 && task.codex?.isolated) mergeResult = prepareTaskMerge(task); return json(response, 200, { task: recordVerification(task.id, verification, mergeResult), tasks: listTasks() }); }
+    const previewMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/merge-preview$/);
+    if (request.method === "POST" && previewMatch) { const task = getTask(previewMatch[1]); if (!task) return json(response, 404, { error: "Task not found" }); if (task.status !== "待复核" || task.testTone !== "success") return json(response, 400, { error: "只有真实验证通过、等待复核的任务可以查看可合并变更。" }); return json(response, 200, { task: recordMergePreview(task.id, prepareTaskMerge(task, { commit: true })), tasks: listTasks() }); }
+    const mergeMatch = url.pathname.match(/^\/api\/tasks\/([^/]+)\/merge$/);
+    if (request.method === "POST" && mergeMatch) { const task = getTask(mergeMatch[1]); if (!task) return json(response, 404, { error: "Task not found" }); if (task.status !== "待复核" || task.testTone !== "success") return json(response, 400, { error: "只有真实验证通过、等待复核的任务可以合并代码。" }); return json(response, 200, { task: recordMergeResult(task.id, mergeTaskWorktree(task)), tasks: listTasks() }); }
     const match = url.pathname.match(/^\/api\/tasks\/([^/]+)\/(approve|accept|return)$/);
     if (request.method === "POST" && match) {
       const [, id, action] = match;
