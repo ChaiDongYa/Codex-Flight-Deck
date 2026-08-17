@@ -1,0 +1,136 @@
+- generic [ref=f3e4]:
+  - generic [ref=f3e5]:
+    - button "Codex-Flight-Deck-Test · main" [ref=f3e6] [cursor=pointer]
+    - generic [ref=f3e8]:
+      - tablist [ref=f3e9]:
+        - generic [ref=f3e11]:
+          - tab "任务" [selected] [ref=f3e13] [cursor=pointer]
+          - tab "版本 1" [ref=f3e15] [cursor=pointer]:
+            - generic [ref=f3e16]:
+              - text: 版本
+              - superscript [ref=f3e18]:
+                - generic [ref=f3e19]: "1"
+          - tab [ref=f3e22] [cursor=pointer]:
+            - generic [ref=f3e23]:
+              - text: 复核
+              - superscript [ref=f3e25]: "0"
+      - generic:
+        - generic:
+          - tabpanel "任务"
+  - main [ref=f3e26]:
+    - generic [ref=f3e27]:
+      - generic [ref=f3e28]:
+        - generic [ref=f3e29]:
+          - heading "任务 4" [level=1] [ref=f3e71]
+          - paragraph [ref=f3e31]: 把需求变成可验证的 Codex 交付。
+        - generic [ref=f3e32]:
+          - group "任务展示方式" [ref=f3e33]:
+            - button "看板" [ref=f3e34] [cursor=pointer]
+            - button "列表" [ref=f3e35] [cursor=pointer]
+          - button "显示空阶段" [ref=f3e36] [cursor=pointer]
+          - button "+ 新建交付" [ref=f3e37] [cursor=pointer]
+          - button "⚡ 快速任务" [ref=f3e38] [cursor=pointer]
+          - button "▷ 执行队列 · 1/4" [ref=f3e72] [cursor=pointer]
+          - button "全部状态 ⌄" [ref=f3e41] [cursor=pointer]:
+            - text: 全部状态
+            - generic [ref=f3e43]: ⌄
+      - generic "任务看板" [ref=f3e44]:
+        - generic [ref=f3e73]:
+          - generic [ref=f3e74]:
+            - generic [ref=f3e75]: Codex 执行中
+            - generic [ref=f3e76]: "1"
+          - button "FD-2203 · 全栈工程师 创建一个 关于我的页面 区别于之前的 about 新的叫aboutme 没有后端功能。春前端页面里边我是一个全栈开发工程师 执行中 等待 Codex 完成" [ref=f3e78]:
+            - generic [ref=f3e79]: FD-2203 · 全栈工程师
+            - generic [ref=f3e80]: 创建一个 关于我的页面 区别于之前的 about 新的叫aboutme
+            - paragraph [ref=f3e81]: 没有后端功能。春前端页面里边我是一个全栈开发工程师
+            - generic [ref=f3e82]:
+              - generic [ref=f3e83]: 执行中
+              - generic [ref=f3e84]: 等待 Codex 完成
+        - generic [ref=f3e45]:
+          - generic [ref=f3e46]:
+            - generic [ref=f3e47]: 已完成
+            - generic [ref=f3e48]: "3"
+          - generic [ref=f3e49]:
+            - button "FD-2202 · 前端专家 实现任务详情与删除交互 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。 已完成 验证通过" [active] [ref=f3e50]:
+              - generic [ref=f3e51]: FD-2202 · 前端专家
+              - generic [ref=f3e52]: 实现任务详情与删除交互
+              - paragraph [ref=f3e53]: 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。
+              - generic [ref=f3e54]:
+                - generic [ref=f3e55]: 已完成
+                - generic [ref=f3e56]: 验证通过
+            - button "FD-2201 · 前端专家 实现新增与编辑任务表单 提供新增列表内容和编辑既有列表项的前端表单，字段为姓名、性别、年龄。 已完成 验证通过" [ref=f3e57]:
+              - generic [ref=f3e58]: FD-2201 · 前端专家
+              - generic [ref=f3e59]: 实现新增与编辑任务表单
+              - paragraph [ref=f3e60]: 提供新增列表内容和编辑既有列表项的前端表单，字段为姓名、性别、年龄。
+              - generic [ref=f3e61]:
+                - generic [ref=f3e62]: 已完成
+                - generic [ref=f3e63]: 验证通过
+            - button "FD-2200 · 前端专家 实现任务列表、查询重置与分页 构建展示姓名、性别、年龄的任务列表页面，支持搜索、重置和分页切换，验证列表浏览与查询操作。 已完成 验证通过" [ref=f3e64]:
+              - generic [ref=f3e65]: FD-2200 · 前端专家
+              - generic [ref=f3e66]: 实现任务列表、查询重置与分页
+              - paragraph [ref=f3e67]: 构建展示姓名、性别、年龄的任务列表页面，支持搜索、重置和分页切换，验证列表浏览与查询操作。
+              - generic [ref=f3e68]:
+                - generic [ref=f3e69]: 已完成
+                - generic [ref=f3e70]: 验证通过
+    - generic "拖动调整详情宽度" [ref=f3e85]
+    - complementary [ref=f3e86]:
+      - generic [ref=f3e89]:
+        - generic [ref=f3e90]:
+          - generic [ref=f3e91]:
+            - generic [ref=f3e92]: FD-2202
+            - generic [ref=f3e93]: 已完成
+          - generic [ref=f3e94]:
+            - button "任务更多操作" [ref=f3e95] [cursor=pointer]:
+              - generic [ref=f3e96]: •••
+            - button "关闭任务详情" [ref=f3e97] [cursor=pointer]: ×
+          - heading "实现任务详情与删除交互" [level=2] [ref=f3e98]
+        - generic [ref=f3e99]:
+          - generic [ref=f3e100]:
+            - generic [ref=f3e101]:
+              - text: 版本交付分支
+              - code [ref=f3e102]: flight-deck/release/v0-1-rel-mssu0tsn
+              - text: /Users/fangyuanzhonghe/code/Codex-Flight-Deck-Test/.flight-deck-worktrees/release-rel-mssu0tsn
+            - generic [ref=f3e103]:
+              - button "在编辑器打开" [ref=f3e104] [cursor=pointer]
+              - button "查看代码变更" [ref=f3e106] [cursor=pointer]
+          - generic [ref=f3e108]:
+            - heading "任务说明" [level=3] [ref=f3e109]
+            - paragraph [ref=f3e110]: 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。
+          - generic [ref=f3e111]:
+            - heading "验收标准" [level=3] [ref=f3e112]
+            - paragraph [ref=f3e113]: 用户可从列表打开详情视图并查看姓名、性别、年龄；用户可删除一条记录；删除成功后保留当前查询条件重新查询静态数据，若当前页无数据且pageNo大于1，则回退至pageNo-1重新查询；pageNo为1时不再回退；每页条数保持不变。
+          - generic [ref=f3e114]:
+            - heading "交付已完成" [level=3] [ref=f3e115]
+            - paragraph [ref=f3e116]: 变更已合并并完成验收。
+          - group [ref=f3e117]:
+            - generic "查看接口、上下文与实施计划 +" [ref=f3e118] [cursor=pointer]
+          - group [ref=f3e119]:
+            - generic "查看完整执行记录（29 个关键节点） +" [ref=f3e120] [cursor=pointer]
+          - generic [ref=f3e121]:
+            - heading "最近动态" [level=3] [ref=f3e123]
+            - list [ref=f3e124]:
+              - listitem [ref=f3e125]:
+                - time [ref=f3e126]: 2026/8/14 21:15:09
+                - generic [ref=f3e127]:
+                  - generic [ref=f3e128]: 任务已创建
+                  - text: 等待确认计划并启动 Codex。
+              - listitem [ref=f3e129]:
+                - time [ref=f3e130]: 2026/8/15 10:50:23
+                - generic [ref=f3e131]:
+                  - generic [ref=f3e132]: 已合并到目标分支
+                  - text: main
+              - listitem [ref=f3e133]:
+                - time [ref=f3e134]: 2026/8/15 10:48:54
+                - generic [ref=f3e135]:
+                  - generic [ref=f3e136]: 项目验证通过
+                  - text: npm run build
+          - generic [ref=f3e137]:
+            - generic [ref=f3e139]:
+              - heading "讨论与修改意见" [level=3] [ref=f3e140]
+              - paragraph [ref=f3e141]: 保存讨论不会重新执行；需要改动时，将同一条意见交给 Codex 增量处理。
+            - textbox "例如：确认列表默认按创建时间倒序；空状态按设计稿展示。" [ref=f3e142]
+            - generic [ref=f3e143]:
+              - button "添加附件" [ref=f3e144] [cursor=pointer]
+              - generic [ref=f3e146]:
+                - button "仅保存讨论" [disabled] [ref=f3e147]
+                - button "交给 Codex 增量修改" [disabled] [ref=f3e148]

@@ -1,0 +1,65 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - button "Codex-Flight-Deck-Test · main" [ref=e6] [cursor=pointer]
+    - generic [ref=e8]:
+      - tablist [ref=e9]:
+        - generic [ref=e11]:
+          - tab "任务" [selected] [ref=e13] [cursor=pointer]
+          - tab [ref=e15] [cursor=pointer]:
+            - generic [ref=e16]:
+              - text: 版本
+              - superscript [ref=e18]: "0"
+      - generic:
+        - generic:
+          - tabpanel "任务"
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - heading "任务 4" [level=1] [ref=e23]
+          - paragraph [ref=e24]: 把需求变成可验证的 Codex 交付。
+        - generic [ref=e25]:
+          - group "任务展示方式" [ref=e26]:
+            - button "看板" [ref=e27] [cursor=pointer]
+            - button "列表" [ref=e28] [cursor=pointer]
+          - button "显示空阶段" [ref=e29] [cursor=pointer]
+          - button "+ 新建交付" [ref=e30] [cursor=pointer]
+          - button "⚡ 快速任务" [ref=e31] [cursor=pointer]
+          - button "▷ 执行队列 · 0/4" [ref=e32] [cursor=pointer]
+          - button "全部状态 ⌄" [ref=e34] [cursor=pointer]:
+            - text: 全部状态
+            - generic [ref=e36]: ⌄
+      - generic "任务看板" [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]: 已完成
+            - generic [ref=e41]: "4"
+          - generic [ref=e42]:
+            - button "FD-2203 · 全栈工程师 创建一个 关于我的页面 区别于之前的 about 新的叫aboutme 没有后端功能。春前端页面里边我是一个全栈开发工程师 已完成 验证通过" [ref=e43]:
+              - generic [ref=e44]: FD-2203 · 全栈工程师
+              - generic [ref=e45]: 创建一个 关于我的页面 区别于之前的 about 新的叫aboutme
+              - paragraph [ref=e46]: 没有后端功能。春前端页面里边我是一个全栈开发工程师
+              - generic [ref=e47]:
+                - generic [ref=e48]: 已完成
+                - generic [ref=e49]: 验证通过
+            - button "FD-2201 · 前端专家 实现新增与编辑任务表单 提供新增列表内容和编辑既有列表项的前端表单，字段为姓名、性别、年龄。 已完成 验证通过" [ref=e50]:
+              - generic [ref=e51]: FD-2201 · 前端专家
+              - generic [ref=e52]: 实现新增与编辑任务表单
+              - paragraph [ref=e53]: 提供新增列表内容和编辑既有列表项的前端表单，字段为姓名、性别、年龄。
+              - generic [ref=e54]:
+                - generic [ref=e55]: 已完成
+                - generic [ref=e56]: 验证通过
+            - button "FD-2202 · 前端专家 实现任务详情与删除交互 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。 已完成 验证通过" [ref=e57]:
+              - generic [ref=e58]: FD-2202 · 前端专家
+              - generic [ref=e59]: 实现任务详情与删除交互
+              - paragraph [ref=e60]: 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。
+              - generic [ref=e61]:
+                - generic [ref=e62]: 已完成
+                - generic [ref=e63]: 验证通过
+            - button "FD-2200 · 前端专家 实现任务列表、查询重置与分页 构建展示姓名、性别、年龄的任务列表页面，支持搜索、重置和分页切换，验证列表浏览与查询操作。 已完成 验证通过" [ref=e64]:
+              - generic [ref=e65]: FD-2200 · 前端专家
+              - generic [ref=e66]: 实现任务列表、查询重置与分页
+              - paragraph [ref=e67]: 构建展示姓名、性别、年龄的任务列表页面，支持搜索、重置和分页切换，验证列表浏览与查询操作。
+              - generic [ref=e68]:
+                - generic [ref=e69]: 已完成
+                - generic [ref=e70]: 验证通过

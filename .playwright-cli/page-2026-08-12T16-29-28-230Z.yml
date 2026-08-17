@@ -1,0 +1,54 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - button "gh-enterprise · dev-1.3 ⌄" [active] [ref=e7] [cursor=pointer]:
+        - text: gh-enterprise
+        - generic [ref=e9]: · dev-1.3
+        - generic [ref=e10]: ⌄
+      - menu [ref=e44]:
+        - paragraph [ref=e45]: 本机项目
+        - menuitem "全部项目" [ref=e46] [cursor=pointer]
+        - menuitem "Codex-Flight-Deck-Test" [ref=e48] [cursor=pointer]
+        - menuitem "flight-deck-no-git-check" [ref=e50] [cursor=pointer]
+        - menuitem "gh-enterprise ✓" [ref=e52] [cursor=pointer]:
+          - text: gh-enterprise
+          - generic [ref=e54]: ✓
+        - button "+ 添加项目" [ref=e56] [cursor=pointer]
+        - button "⚙ 项目规则与 Skills" [ref=e57] [cursor=pointer]
+        - button "⌕ 本地知识库" [ref=e58] [cursor=pointer]
+        - button "⌁ Apifox 配置" [ref=e59] [cursor=pointer]
+    - navigation "Flight Deck 页面" [ref=e11]:
+      - button "任务" [ref=e12] [cursor=pointer]
+      - button "版本 1" [ref=e43] [cursor=pointer]:
+        - text: 版本
+        - generic [ref=e14]: "1"
+      - button "Worktrees 0" [ref=e15] [cursor=pointer]:
+        - text: Worktrees
+        - generic [ref=e16]: "0"
+      - button "复核" [ref=e17] [cursor=pointer]
+    - generic [ref=e18]:
+      - generic [ref=e19]: ⌕
+      - textbox "⌕" [ref=e20]:
+        - /placeholder: 搜索任务…
+    - button "Ⅱ 暂停队列 0/0" [ref=e21] [cursor=pointer]:
+      - text: Ⅱ 暂停队列
+      - generic [ref=e22]: 0/0
+  - main [ref=e23]:
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - heading "任务 0" [level=1] [ref=e27]
+          - paragraph [ref=e28]: 把需求变成可验证的 Codex 交付。
+        - generic [ref=e29]:
+          - button "+ 新建交付" [ref=e30] [cursor=pointer]
+          - button "⚡ 快速任务" [ref=e31] [cursor=pointer]
+          - button "全部状态 ⌄" [ref=e33] [cursor=pointer]:
+            - text: 全部状态
+            - generic [ref=e35]: ⌄
+          - button "待我决策" [ref=e36] [cursor=pointer]
+      - generic [ref=e37]:
+        - generic [ref=e38]: 任务
+        - generic [ref=e39]: Worktree
+        - generic [ref=e40]: Codex 动态
+        - generic [ref=e41]: 验证
+      - generic [ref=e42]: 没有匹配的任务

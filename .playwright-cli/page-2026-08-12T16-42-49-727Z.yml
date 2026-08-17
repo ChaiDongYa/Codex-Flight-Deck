@@ -1,0 +1,54 @@
+- generic [ref=f3e4]:
+  - generic [ref=f3e5]:
+    - generic [ref=f3e6]:
+      - button "gh-enterprise · dev-1.3 ⌄" [active] [ref=f3e7] [cursor=pointer]:
+        - text: gh-enterprise
+        - generic [ref=f3e9]: · dev-1.3
+        - generic [ref=f3e10]: ⌄
+      - menu [ref=f3e43]:
+        - paragraph [ref=f3e44]: 本机项目
+        - menuitem "全部项目" [ref=f3e45] [cursor=pointer]
+        - menuitem "Codex-Flight-Deck-Test" [ref=f3e47] [cursor=pointer]
+        - menuitem "flight-deck-no-git-check" [ref=f3e49] [cursor=pointer]
+        - menuitem "gh-enterprise ✓" [ref=f3e51] [cursor=pointer]:
+          - text: gh-enterprise
+          - generic [ref=f3e53]: ✓
+        - button "+ 添加项目" [ref=f3e55] [cursor=pointer]
+        - button "⚙ 项目规则与 Skills" [ref=f3e56] [cursor=pointer]
+        - button "⌕ 本地知识库" [ref=f3e57] [cursor=pointer]
+        - button "⌁ Apifox 配置" [ref=f3e58] [cursor=pointer]
+    - navigation "Flight Deck 页面" [ref=f3e11]:
+      - button "任务" [ref=f3e12] [cursor=pointer]
+      - button "版本 2" [ref=f3e13] [cursor=pointer]:
+        - text: 版本
+        - generic [ref=f3e14]: "2"
+      - button "Worktrees 0" [ref=f3e15] [cursor=pointer]:
+        - text: Worktrees
+        - generic [ref=f3e16]: "0"
+      - button "复核" [ref=f3e17] [cursor=pointer]
+    - generic [ref=f3e18]:
+      - generic [ref=f3e19]: ⌕
+      - textbox "⌕" [ref=f3e20]:
+        - /placeholder: 搜索任务…
+    - button "Ⅱ 暂停队列 0/0" [ref=f3e21] [cursor=pointer]:
+      - text: Ⅱ 暂停队列
+      - generic [ref=f3e22]: 0/0
+  - main [ref=f3e23]:
+    - generic [ref=f3e24]:
+      - generic [ref=f3e25]:
+        - generic [ref=f3e26]:
+          - heading "任务 0" [level=1] [ref=f3e27]
+          - paragraph [ref=f3e28]: 把需求变成可验证的 Codex 交付。
+        - generic [ref=f3e29]:
+          - button "+ 新建交付" [ref=f3e30] [cursor=pointer]
+          - button "⚡ 快速任务" [ref=f3e31] [cursor=pointer]
+          - button "全部状态 ⌄" [ref=f3e33] [cursor=pointer]:
+            - text: 全部状态
+            - generic [ref=f3e35]: ⌄
+          - button "待我决策" [ref=f3e36] [cursor=pointer]
+      - generic [ref=f3e37]:
+        - generic [ref=f3e38]: 任务
+        - generic [ref=f3e39]: Worktree
+        - generic [ref=f3e40]: Codex 动态
+        - generic [ref=f3e41]: 验证
+      - generic [ref=f3e42]: 没有匹配的任务

@@ -1,0 +1,134 @@
+- generic [ref=f3e3]:
+  - generic [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - generic [ref=f3e6]:
+        - button "gh-enterprise · dev-1.3 ⌄" [ref=f3e7] [cursor=pointer]:
+          - text: gh-enterprise
+          - generic [ref=f3e9]: · dev-1.3
+          - generic [ref=f3e10]: ⌄
+        - menu [ref=f3e43]:
+          - paragraph [ref=f3e44]: 本机项目
+          - menuitem "全部项目" [ref=f3e45] [cursor=pointer]
+          - menuitem "Codex-Flight-Deck-Test" [ref=f3e47] [cursor=pointer]
+          - menuitem "flight-deck-no-git-check" [ref=f3e49] [cursor=pointer]
+          - menuitem "gh-enterprise ✓" [ref=f3e51] [cursor=pointer]:
+            - text: gh-enterprise
+            - generic [ref=f3e53]: ✓
+          - button "+ 添加项目" [ref=f3e55] [cursor=pointer]
+          - button "⚙ 项目规则与 Skills" [active] [ref=f3e56] [cursor=pointer]
+          - button "⌕ 本地知识库" [ref=f3e57] [cursor=pointer]
+          - button "⌁ Apifox 配置" [ref=f3e58] [cursor=pointer]
+      - navigation "Flight Deck 页面" [ref=f3e11]:
+        - button "任务" [ref=f3e12] [cursor=pointer]
+        - button "版本 2" [ref=f3e13] [cursor=pointer]:
+          - text: 版本
+          - generic [ref=f3e14]: "2"
+        - button "Worktrees 0" [ref=f3e15] [cursor=pointer]:
+          - text: Worktrees
+          - generic [ref=f3e16]: "0"
+        - button "复核" [ref=f3e17] [cursor=pointer]
+      - generic [ref=f3e18]:
+        - generic [ref=f3e19]: ⌕
+        - textbox "⌕" [ref=f3e20]:
+          - /placeholder: 搜索任务…
+      - button "Ⅱ 暂停队列 0/0" [ref=f3e21] [cursor=pointer]:
+        - text: Ⅱ 暂停队列
+        - generic [ref=f3e22]: 0/0
+    - main [ref=f3e23]:
+      - generic [ref=f3e24]:
+        - generic [ref=f3e25]:
+          - generic [ref=f3e26]:
+            - heading "任务 0" [level=1] [ref=f3e27]
+            - paragraph [ref=f3e28]: 把需求变成可验证的 Codex 交付。
+          - generic [ref=f3e29]:
+            - button "+ 新建交付" [ref=f3e30] [cursor=pointer]
+            - button "⚡ 快速任务" [ref=f3e31] [cursor=pointer]
+            - button "全部状态 ⌄" [ref=f3e33] [cursor=pointer]:
+              - text: 全部状态
+              - generic [ref=f3e35]: ⌄
+            - button "待我决策" [ref=f3e36] [cursor=pointer]
+        - generic [ref=f3e37]:
+          - generic [ref=f3e38]: 任务
+          - generic [ref=f3e39]: Worktree
+          - generic [ref=f3e40]: Codex 动态
+          - generic [ref=f3e41]: 验证
+        - generic [ref=f3e42]: 没有匹配的任务
+  - dialog [ref=f3e59]:
+    - button "×" [ref=f3e60] [cursor=pointer]
+    - generic [ref=f3e61]: gh-enterprise · 执行规范
+    - heading "项目规则与 Skills" [level=2] [ref=f3e62]
+    - paragraph [ref=f3e63]: 这些设置只在 Flight Deck 创建的新任务中生效，并会在任务创建时保存快照。
+    - generic [ref=f3e64]:
+      - generic [ref=f3e65]:
+        - text: 项目规则
+        - textbox "项目规则" [ref=f3e66]:
+          - /placeholder: 例如：改动接口前先检查权限；禁止修改支付结算核心目录…
+          - text: 先阅读 AGENTS.md、README.md 与相关模块；只修改任务范围内的文件。
+      - generic [ref=f3e67]:
+        - text: 工程规范
+        - textbox "工程规范" [ref=f3e68]:
+          - /placeholder: 例如：TypeScript 严格模式；新增接口须有单测；组件遵守现有设计系统…
+          - text: 保持现有代码风格；补充必要测试；避免无关重构。
+      - generic [ref=f3e69]:
+        - text: 固定验证命令（可选）
+        - textbox "固定验证命令（可选） 仅允许 npm run <script>。不填则按 test → check → build 自动选择。" [ref=f3e70]:
+          - /placeholder: npm run test
+        - generic [ref=f3e71]: 仅允许 npm run <script>。不填则按 test → check → build 自动选择。
+      - generic [ref=f3e72]:
+        - generic [ref=f3e73]: 启用已安装的 Codex Skills
+        - generic [ref=f3e74]: 启用后会将规则快照写入新任务提示词。缺失的推荐 Skill 会明确标识；为避免静默安装未知代码，需从项目页确认来源后再安装。
+        - generic [ref=f3e75]:
+          - generic [ref=f3e76]:
+            - generic [ref=f3e77]: ✓
+            - paragraph [ref=f3e78]:
+              - generic [ref=f3e79]: $manage-taskboard
+              - generic [ref=f3e80]: 任务编排 · 已安装
+          - generic [ref=f3e81]:
+            - generic [ref=f3e82]: ✓
+            - paragraph [ref=f3e83]:
+              - generic [ref=f3e84]: $task-handoff
+              - generic [ref=f3e85]: 任务交接 · 已安装
+          - generic [ref=f3e86]:
+            - generic [ref=f3e87]: "!"
+            - paragraph [ref=f3e88]:
+              - generic [ref=f3e89]: $design-taste-frontend
+              - generic [ref=f3e90]: 界面质量 · 尚未安装
+        - generic [ref=f3e91] [cursor=pointer]:
+          - checkbox "$dashi-ppt" [ref=f3e93]
+          - generic [ref=f3e94]: $dashi-ppt
+        - generic [ref=f3e95] [cursor=pointer]:
+          - checkbox "$gh-enterprise-frontend-dev" [ref=f3e97]
+          - generic [ref=f3e98]: $gh-enterprise-frontend-dev
+        - generic [ref=f3e99] [cursor=pointer]:
+          - checkbox "$imagegen" [ref=f3e101]
+          - generic [ref=f3e102]: $imagegen
+        - generic [ref=f3e103] [cursor=pointer]:
+          - checkbox "$manage-taskboard" [ref=f3e105]
+          - generic [ref=f3e106]: $manage-taskboard
+        - generic [ref=f3e107] [cursor=pointer]:
+          - checkbox "$openai-docs" [ref=f3e109]
+          - generic [ref=f3e110]: $openai-docs
+        - generic [ref=f3e111] [cursor=pointer]:
+          - checkbox "$playwright" [ref=f3e113]
+          - generic [ref=f3e114]: $playwright
+        - generic [ref=f3e115] [cursor=pointer]:
+          - checkbox "$plugin-creator" [ref=f3e117]
+          - generic [ref=f3e118]: $plugin-creator
+        - generic [ref=f3e119] [cursor=pointer]:
+          - checkbox "$review-agent" [ref=f3e121]
+          - generic [ref=f3e122]: $review-agent
+        - generic [ref=f3e123] [cursor=pointer]:
+          - checkbox "$security-best-practices" [ref=f3e125]
+          - generic [ref=f3e126]: $security-best-practices
+        - generic [ref=f3e127] [cursor=pointer]:
+          - checkbox "$skill-creator" [ref=f3e129]
+          - generic [ref=f3e130]: $skill-creator
+        - generic [ref=f3e131] [cursor=pointer]:
+          - checkbox "$skill-installer" [ref=f3e133]
+          - generic [ref=f3e134]: $skill-installer
+        - generic [ref=f3e135] [cursor=pointer]:
+          - checkbox "$task-handoff" [ref=f3e137]
+          - generic [ref=f3e138]: $task-handoff
+    - contentinfo [ref=f3e139]:
+      - button "取 消" [ref=f3e140] [cursor=pointer]
+      - button "保存项目规则" [ref=f3e142] [cursor=pointer]

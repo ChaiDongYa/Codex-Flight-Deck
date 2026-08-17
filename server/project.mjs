@@ -8,14 +8,12 @@ import {
 } from "node:fs";
 import { execFile, execFileSync, spawn } from "node:child_process";
 import net from "node:net";
+import { createHash } from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { dataDir } from "./storage.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const configFile = path.join(root, "data", "projects.json");
-const initialPath =
-  process.env.FLIGHT_DECK_PROJECT_PATH ||
-  "/Users/fangyuanzhonghe/code/Codex-Flight-Deck-Test";
+const configFile = path.join(dataDir, "projects.json");
+const initialPath = process.env.FLIGHT_DECK_PROJECT_PATH || "";
 const previews = new Map();
 const defaultPolicy = () => ({
   rules: "先阅读 AGENTS.md、README.md 与相关模块；只修改任务范围内的文件。",
@@ -23,6 +21,36 @@ const defaultPolicy = () => ({
   skills: [],
   verificationCommand: "",
 });
+const apifoxKeychainService = (projectPath) =>
+  `Codex Flight Deck Apifox ${createHash("sha256").update(projectPath).digest("hex").slice(0, 16)}`;
+function keychainToken(projectPath) {
+  try {
+    return execFileSync(
+      "security",
+      ["find-generic-password", "-s", apifoxKeychainService(projectPath), "-w"],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+  } catch {
+    return "";
+  }
+}
+const recommendedSkills = [
+  {
+    id: "manage-taskboard",
+    label: "任务编排",
+    description: "让 Codex 按任务状态、依赖和验收规则协作。",
+  },
+  {
+    id: "task-handoff",
+    label: "任务交接",
+    description: "在设备或账号切换时保留执行上下文。",
+  },
+  {
+    id: "design-taste-frontend",
+    label: "界面质量",
+    description: "用于前端视觉一致性和实现质量检查。",
+  },
+];
 
 const projectContextFiles = [
   "AGENTS.md",
@@ -45,7 +73,11 @@ function readConfig() {
   try {
     return JSON.parse(readFileSync(configFile, "utf8"));
   } catch {
-    return { activePath: initialPath, paths: [initialPath], policies: {} };
+    return {
+      activePath: initialPath,
+      paths: initialPath ? [initialPath] : [],
+      policies: {},
+    };
   }
 }
 function writeConfig(config) {
@@ -110,22 +142,28 @@ export function addProject(candidatePath) {
 }
 
 export function updateProjectPolicy(candidatePath, input = {}) {
-  const project = inspectProject(candidatePath);
+  // The HTTP endpoint submits one object (`{ path, rules, ... }`), while
+  // internal callers can pass `(path, policy)`. Normalize both forms here.
+  const payload =
+    candidatePath && typeof candidatePath === "object"
+      ? candidatePath
+      : { ...input, path: candidatePath };
+  const project = inspectProject(payload.path);
   const config = readConfig();
   if (!config.paths.includes(project.path))
     throw new Error("请先将该仓库添加为项目。");
-  const skills = Array.isArray(input.skills)
-    ? input.skills.filter((skill) => typeof skill === "string").slice(0, 12)
+  const skills = Array.isArray(payload.skills)
+    ? payload.skills.filter((skill) => typeof skill === "string").slice(0, 12)
     : [];
-  const verificationCommand = `${input.verificationCommand || ""}`.trim();
+  const verificationCommand = `${payload.verificationCommand || ""}`.trim();
   if (
     verificationCommand &&
     !/^npm run [a-zA-Z0-9:_-]+$/.test(verificationCommand)
   )
     throw new Error("验证命令目前仅支持 npm run <script>，例如 npm run test。");
   const policy = {
-    rules: `${input.rules || ""}`.trim().slice(0, 4000),
-    standards: `${input.standards || ""}`.trim().slice(0, 4000),
+    rules: `${payload.rules || ""}`.trim().slice(0, 4000),
+    standards: `${payload.standards || ""}`.trim().slice(0, 4000),
     skills,
     verificationCommand,
   };
@@ -134,6 +172,72 @@ export function updateProjectPolicy(candidatePath, input = {}) {
     policies: { ...(config.policies || {}), [project.path]: policy },
   });
   return inspectProject(project.path);
+}
+
+export function getProjectApifoxConfig(candidatePath) {
+  const project = inspectProject(candidatePath);
+  const apifox = project.policy.apifox || {};
+  return {
+    projectId: `${apifox.projectId || ""}`,
+    configured: Boolean(keychainToken(project.path)),
+    updatedAt: apifox.updatedAt || "",
+  };
+}
+export function updateProjectApifoxConfig(candidatePath, input = {}) {
+  const project = inspectProject(candidatePath);
+  const config = readConfig();
+  if (!config.paths.includes(project.path))
+    throw new Error("请先将该仓库添加为项目。");
+  const projectId = `${input.projectId || ""}`
+    .trim()
+    .replace(/^.*project\/(\d+).*$/, "$1");
+  if (projectId && !/^\d+$/.test(projectId))
+    throw new Error("请输入有效的 Apifox 项目 ID 或项目地址。");
+  const policy = {
+    ...defaultPolicy(),
+    ...project.policy,
+    apifox: {
+      ...(project.policy.apifox || {}),
+      projectId,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+  if (`${input.token || ""}`.trim()) {
+    execFileSync(
+      "security",
+      [
+        "add-generic-password",
+        "-U",
+        "-s",
+        apifoxKeychainService(project.path),
+        "-a",
+        "apifox-readonly",
+        "-w",
+        `${input.token}`,
+      ],
+      { encoding: "utf8", stdio: "ignore" },
+    );
+  }
+  if (input.clearToken) {
+    try {
+      execFileSync(
+        "security",
+        ["delete-generic-password", "-s", apifoxKeychainService(project.path)],
+        { stdio: "ignore" },
+      );
+    } catch {
+      /* already absent */
+    }
+  }
+  writeConfig({
+    ...config,
+    policies: { ...(config.policies || {}), [project.path]: policy },
+  });
+  return getProjectApifoxConfig(project.path);
+}
+export function getProjectApifoxToken(candidatePath) {
+  const project = inspectProject(candidatePath);
+  return keychainToken(project.path);
 }
 
 export function discoverProjectSetup(candidatePath) {
@@ -150,7 +254,18 @@ export function discoverProjectSetup(candidatePath) {
   } catch {
     /* Projects without package.json can still use Flight Deck. */
   }
-  return { project, contextFiles, scripts, skills: listInstalledSkills() };
+  const skills = listInstalledSkills();
+  return {
+    project,
+    contextFiles,
+    scripts,
+    skills,
+    skillHealth: recommendedSkills.map((skill) => ({
+      ...skill,
+      installed: skills.includes(skill.id),
+      enabled: project.policy.skills.includes(skill.id),
+    })),
+  };
 }
 
 export function listInstalledSkills() {
@@ -191,15 +306,54 @@ export function getProject(candidatePath) {
 
 export function createTaskWorktree(task) {
   const project = getProject(task.projectPath);
-  if (project.executionMode === "shared")
+  if (task.deliveryMode === "direct" || project.executionMode === "shared") {
+    // A direct delivery is intentionally written in the checkout the user is
+    // looking at. Refuse to mix it with pre-existing local edits: otherwise
+    // Flight Deck could later commit unrelated work under this task ID.
+    if (project.executionMode !== "shared" && targetWorkspaceDirty(project.path).length)
+      throw new Error("当前分支有未提交改动。请先保存、提交或回退现有改动，再启动直接交付任务。");
     return {
       ...project,
-      branch: "共享工作目录",
+      branch: project.executionMode === "shared" ? "共享工作目录" : project.branch,
+      targetBranch: project.executionMode === "shared" ? "" : project.branch,
       workspacePath: project.path,
       isolated: false,
+      deliveryMode: "direct",
     };
-  const branch = `flight-deck/${task.id.toLowerCase()}`;
+  }
   const targetBranch = task.merge?.targetBranch || project.branch;
+  if (task.deliveryMode === "release") {
+    const releaseKey = `${task.versionId || task.id}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const releaseName = `${task.releaseName || task.versionId || "release"}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const branch = `flight-deck/release/${releaseName || "release"}-${releaseKey}`;
+    const directory = `${project.path}/.flight-deck-worktrees/release-${releaseKey}`;
+    try {
+      const existing = git(["worktree", "list", "--porcelain"], project.path);
+      if (!existing.includes(`worktree ${directory}\n`)) {
+        const branchExists = Boolean(tryGit(["rev-parse", "--verify", branch], project.path));
+        execFileSync(
+          "git",
+          branchExists
+            ? ["worktree", "add", directory, branch]
+            : ["worktree", "add", "-b", branch, directory, targetBranch],
+          { cwd: project.path, encoding: "utf8" },
+        );
+      }
+    } catch (error) {
+      throw new Error(`无法创建版本 worktree：${error.stderr?.trim() || error.message}`);
+    }
+    return {
+      ...project,
+      branch,
+      targetBranch,
+      workspacePath: directory,
+      isolated: true,
+      deliveryMode: "release",
+      releaseShared: true,
+      head: tryGit(["rev-parse", "HEAD"], directory),
+    };
+  }
+  const branch = `flight-deck/${task.id.toLowerCase()}`;
   const directory = `${project.path}/.flight-deck-worktrees/${task.id}`;
   try {
     const existing = git(["worktree", "list", "--porcelain"], project.path);
@@ -220,7 +374,38 @@ export function createTaskWorktree(task) {
     targetBranch,
     workspacePath: directory,
     isolated: true,
+    deliveryMode: "task",
   };
+}
+
+export function removeMergedTaskWorktree(task) {
+  const project = getProject(task.projectPath);
+  const workspacePath = path.resolve(task.codex?.workspacePath || "");
+  const expectedPath = path.resolve(
+    project.path,
+    ".flight-deck-worktrees",
+    task.id,
+  );
+  if (!task.codex?.isolated || workspacePath !== expectedPath)
+    throw new Error("该任务没有可安全清理的 Flight Deck worktree。");
+  const registered = git(["worktree", "list", "--porcelain"], project.path);
+  if (!registered.includes(`worktree ${workspacePath}\n`))
+    throw new Error("未找到该 worktree 的 Git 注册记录，未执行清理。");
+  try {
+    // Do not force removal: Git refuses to remove uncommitted work, preserving it.
+    execFileSync("git", ["worktree", "remove", workspacePath], {
+      cwd: project.path,
+      encoding: "utf8",
+    });
+    execFileSync("git", ["worktree", "prune"], {
+      cwd: project.path,
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(
+      `无法清理 worktree：${error.stderr?.trim() || error.message}`,
+    );
+  }
 }
 
 function mergeError(error) {
@@ -269,6 +454,49 @@ function ensureTaskCommit(task, workspacePath) {
   return { committed: true, commit: git(["rev-parse", "HEAD"], workspacePath) };
 }
 
+export function commitDirectTask(task) {
+  if (task.codex?.isolated || task.codex?.deliveryMode !== "direct")
+    throw new Error("该任务不是当前分支直接交付，不能在这里保存。");
+  const projectRoot = getProject(task.projectPath).path;
+  const currentBranch = git(["branch", "--show-current"], projectRoot);
+  const targetBranch = task.codex?.branch || task.merge?.targetBranch;
+  if (!currentBranch || (targetBranch && currentBranch !== targetBranch))
+    throw new Error(`当前项目不在任务启动时的 ${targetBranch || "目标"} 分支，不能保存该任务变更。`);
+  const dirty = git(["status", "--porcelain"], projectRoot);
+  if (!dirty)
+    return {
+      state: "empty",
+      targetBranch: currentBranch,
+      branch: currentBranch,
+      message: "当前分支没有待保存的 Git 变更。",
+      preparedAt: new Date().toISOString(),
+    };
+  try {
+    execFileSync("git", ["add", "-A"], { cwd: projectRoot, encoding: "utf8" });
+    execFileSync(
+      "git",
+      ["commit", "-m", `Flight Deck ${task.id}: ${task.title}`],
+      { cwd: projectRoot, encoding: "utf8" },
+    );
+  } catch (error) {
+    throw new Error(`无法保存当前分支变更：${mergeError(error)}`);
+  }
+  const commit = git(["rev-parse", "HEAD"], projectRoot);
+  return {
+    state: "merged",
+    source: "direct-commit",
+    targetBranch: currentBranch,
+    branch: currentBranch,
+    commit,
+    committed: true,
+    committedAt: new Date().toISOString(),
+    mergedAt: new Date().toISOString(),
+    diff: tryGit(["show", "--format=", "--no-ext-diff", "--unified=3", commit, "--"], projectRoot),
+    diffStat: tryGit(["show", "--format=", "--stat", commit, "--"], projectRoot),
+    message: `已保存到 ${currentBranch}，提交说明包含 ${task.id}。`,
+  };
+}
+
 export function prepareTaskMerge(task, { commit = false } = {}) {
   if (!task.codex?.isolated || !task.codex?.workspacePath)
     throw new Error("此任务未在独立 Git worktree 中执行，不能安全合并。");
@@ -282,19 +510,24 @@ export function prepareTaskMerge(task, { commit = false } = {}) {
   if (!tryGit(["rev-parse", "--verify", targetBranch], projectRoot))
     throw new Error(`目标分支不存在：${targetBranch}`);
   const commitResult = commit ? ensureTaskCommit(task, workspacePath) : null;
+  const taskBase = task.codex?.deliveryMode === "release" && task.codex?.head
+    ? task.codex.head
+    : targetBranch;
   const diffArgs = commit
-    ? ["diff", "--no-ext-diff", "--unified=3", `${targetBranch}...${branch}`]
+    ? ["diff", "--no-ext-diff", "--unified=3", `${taskBase}...${branch}`]
     : ["diff", "--no-ext-diff", "--unified=3", targetBranch, "--"];
   const statArgs = commit
-    ? ["diff", "--stat", `${targetBranch}...${branch}`]
+    ? ["diff", "--stat", `${taskBase}...${branch}`]
     : ["diff", "--stat", targetBranch, "--"];
   const diffStat = git(statArgs, workspacePath) || "没有可合并的代码变更。";
   // Store the complete local patch. A truncated patch can start or end in the
   // middle of a file, which breaks file grouping and line-number rendering.
   const diff = git(diffArgs, workspacePath);
   return {
-    state: diff ? "ready" : "empty",
+    state: "empty",
+    source: "merge-preview",
     targetBranch,
+    baseHead: taskBase,
     branch,
     commit:
       commitResult?.commit || tryGit(["rev-parse", "HEAD"], workspacePath),
@@ -307,6 +540,13 @@ export function prepareTaskMerge(task, { commit = false } = {}) {
 
 export function mergeTaskWorktree(task) {
   const prepared = prepareTaskMerge(task, { commit: true });
+  if (task.codex?.deliveryMode === "release")
+    return {
+      ...prepared,
+      state: "release-committed",
+      message: "本任务变更已提交到版本交付分支，等待版本整体合并。",
+      committedAt: new Date().toISOString(),
+    };
   if (prepared.state === "empty")
     return {
       ...prepared,
@@ -364,7 +604,9 @@ export function mergeTaskWorktree(task) {
         conflicts,
         message: "检测到合并冲突；主分支已自动回退，等待人工选择或手动解决。",
       };
-    throw new Error(`合并未完成，已保留任务 worktree 和目标分支：${mergeError(error)}`);
+    throw new Error(
+      `合并未完成，已保留任务 worktree 和目标分支：${mergeError(error)}`,
+    );
   }
   return {
     ...prepared,
@@ -372,6 +614,56 @@ export function mergeTaskWorktree(task) {
     mergedAt: new Date().toISOString(),
     targetHead: git(["rev-parse", "--short", "HEAD"], projectRoot),
   };
+}
+
+export function prepareReleaseMerge(release, tasks) {
+  // A version can also contain intentionally no-code work or a task that was
+  // explicitly split into its own delivery branch. Neither belongs in this
+  // release branch, so only release-mode tasks are a final-merge gate.
+  const releaseTasks = tasks.filter((task) => task.deliveryMode === "release");
+  const exemplar = releaseTasks.find((task) => task.codex?.deliveryMode === "release");
+  if (!exemplar?.codex?.workspacePath || !exemplar.codex?.branch)
+    throw new Error("该版本尚未创建交付分支。请先完成至少一个版本任务。");
+  if (releaseTasks.some((task) => task.codex?.state === "running"))
+    throw new Error("版本仍有正在执行的任务，不能生成最终合并。 ");
+  const unfinished = releaseTasks.filter(
+    (task) =>
+      task.testTone !== "success" ||
+      task.codex?.deliveryMode !== "release" ||
+      !["release-committed", "merged"].includes(task.merge?.state),
+  );
+  if (unfinished.length)
+    throw new Error("请先让版本内每项任务完成验证并提交到版本分支，再进行版本最终合并。 ");
+  const projectRoot = getProject(release.projectPath).path;
+  const targetBranch = exemplar.merge?.targetBranch || project.branch;
+  const branch = exemplar.codex.branch;
+  const diff = git(["diff", "--no-ext-diff", "--unified=3", `${targetBranch}...${branch}`], exemplar.codex.workspacePath);
+  return {
+    state: diff ? "ready" : "empty",
+    source: "merge-preview",
+    targetBranch,
+    branch,
+    diff,
+    diffStat: git(["diff", "--stat", `${targetBranch}...${branch}`], exemplar.codex.workspacePath) || "没有可合并的代码变更。",
+    preparedAt: new Date().toISOString(),
+    projectRoot,
+  };
+}
+
+export function mergeReleaseBranch(release, tasks) {
+  const prepared = prepareReleaseMerge(release, tasks);
+  if (prepared.state === "empty") return { ...prepared, state: "merged", mergedAt: new Date().toISOString() };
+  if (git(["branch", "--show-current"], prepared.projectRoot) !== prepared.targetBranch)
+    throw new Error(`当前项目不在 ${prepared.targetBranch} 分支，不能合并版本交付。`);
+  if (targetWorkspaceDirty(prepared.projectRoot).length)
+    throw new Error("目标分支存在未提交改动，请先处理后再合并版本。 ");
+  try {
+    execFileSync("git", ["merge", "--no-ff", prepared.branch, "-m", `Merge Flight Deck release: ${release.name}`], { cwd: prepared.projectRoot, encoding: "utf8" });
+  } catch (error) {
+    try { execFileSync("git", ["merge", "--abort"], { cwd: prepared.projectRoot, stdio: "ignore" }); } catch { /* no merge to abort */ }
+    throw new Error(`版本合并失败：${mergeError(error)}`);
+  }
+  return { ...prepared, state: "merged", mergedAt: new Date().toISOString(), targetHead: git(["rev-parse", "--short", "HEAD"], prepared.projectRoot) };
 }
 
 export function inspectWorkspace(workspacePath) {
@@ -384,12 +676,72 @@ export function inspectWorkspace(workspacePath) {
       diffStat: "未启用 Git，无法生成 diff",
       dirty: false,
     };
-  const changedFiles = git(["status", "--short"], workspacePath)
+  // Do not use the trimmed git helper here: porcelain status deliberately
+  // starts with a space for an unstaged change, and trimming corrupts paths.
+  const changedFiles = execFileSync("git", ["status", "--short"], {
+    cwd: workspacePath,
+    encoding: "utf8",
+  })
     .split("\n")
     .filter(Boolean);
+  // `git diff` omits staged changes. Flight Deck must show the whole working
+  // delivery (staged + unstaged), otherwise a valid task can be verified but
+  // falsely appear to have no code available for review.
   const diffStat =
-    git(["diff", "--stat"], workspacePath) || "没有未提交的 Git diff";
+    git(["diff", "--stat", "HEAD"], workspacePath) || "没有未提交的 Git diff";
   return { ...project, changedFiles, diffStat, dirty: changedFiles.length > 0 };
+}
+
+export function inspectTaskDiff(task) {
+  if (!task.codex?.workspacePath)
+    throw new Error("任务尚未创建工作区，无法查看代码变更。");
+  const workspacePath = task.codex.workspacePath;
+  // Compare against HEAD rather than the index so staged edits are included
+  // in the same review surface as ordinary working-tree edits.
+  const workspaceDiff = git(["diff", "--no-ext-diff", "--unified=3", "HEAD", "--"], workspacePath);
+  if (workspaceDiff) {
+    return {
+      state: "ready",
+      source: "workspace",
+      branch: task.codex.branch,
+      targetBranch: task.merge?.targetBranch || "",
+      diff: workspaceDiff,
+      diffStat: git(["diff", "--stat", "HEAD", "--"], workspacePath),
+      preparedAt: new Date().toISOString(),
+    };
+  }
+
+  // After a delivery has been committed or merged its worktree is normally
+  // clean.  The review entry must still show the code that was delivered,
+  // rather than replacing the stored diff with an empty working-tree diff.
+  const commit = task.merge?.commit;
+  const committedDiff = commit
+    ? tryGit(["show", "--format=", "--no-ext-diff", "--unified=3", commit, "--"], workspacePath)
+    : "";
+  if (committedDiff) {
+    return {
+      state:
+        task.merge?.state === "merged" || task.merge?.mergedAt || task.status === "已完成"
+          ? "merged"
+          : task.merge?.state || "ready",
+      source: "commit",
+      branch: task.codex.branch,
+      targetBranch: task.merge?.targetBranch || "",
+      commit,
+      diff: committedDiff,
+      diffStat: tryGit(["show", "--format=", "--stat", commit, "--"], workspacePath),
+      preparedAt: new Date().toISOString(),
+    };
+  }
+  return {
+    state: "empty",
+    source: "workspace",
+    branch: task.codex.branch,
+    targetBranch: task.merge?.targetBranch || "",
+    diff: "",
+    diffStat: "没有未提交的 Git diff，也未找到已保存的任务提交。",
+    preparedAt: new Date().toISOString(),
+  };
 }
 
 export async function runProjectVerification(workspacePath, policy = {}) {

@@ -1,0 +1,705 @@
+- generic [ref=f3e3]:
+  - generic [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - button "Codex-Flight-Deck-Test · main" [ref=f3e6] [cursor=pointer]
+      - generic [ref=f3e8]:
+        - tablist [ref=f3e9]:
+          - generic [ref=f3e11]:
+            - tab "任务" [selected] [ref=f3e13] [cursor=pointer]
+            - tab "版本 1" [ref=f3e15] [cursor=pointer]:
+              - generic [ref=f3e16]:
+                - text: 版本
+                - superscript [ref=f3e18]:
+                  - generic [ref=f3e19]: "1"
+            - tab [ref=f3e22] [cursor=pointer]:
+              - generic [ref=f3e23]:
+                - text: 复核
+                - superscript [ref=f3e25]: "0"
+        - generic:
+          - generic:
+            - tabpanel "任务"
+    - main [ref=f3e26]:
+      - generic [ref=f3e27]:
+        - generic [ref=f3e28]:
+          - generic [ref=f3e29]:
+            - heading "任务 4" [level=1] [ref=f3e71]
+            - paragraph [ref=f3e31]: 把需求变成可验证的 Codex 交付。
+          - generic [ref=f3e32]:
+            - group "任务展示方式" [ref=f3e33]:
+              - button "看板" [ref=f3e34] [cursor=pointer]
+              - button "列表" [ref=f3e35] [cursor=pointer]
+            - button "显示空阶段" [ref=f3e36] [cursor=pointer]
+            - button "+ 新建交付" [ref=f3e37] [cursor=pointer]
+            - button "⚡ 快速任务" [ref=f3e38] [cursor=pointer]
+            - button "▷ 执行队列 · 1/4" [ref=f3e72] [cursor=pointer]
+            - button "全部状态 ⌄" [ref=f3e41] [cursor=pointer]:
+              - text: 全部状态
+              - generic [ref=f3e43]: ⌄
+        - generic "任务看板" [ref=f3e44]:
+          - generic [ref=f3e73]:
+            - generic [ref=f3e74]:
+              - generic [ref=f3e75]: Codex 执行中
+              - generic [ref=f3e76]: "1"
+            - button "FD-2203 · 全栈工程师 创建一个 关于我的页面 区别于之前的 about 新的叫aboutme 没有后端功能。春前端页面里边我是一个全栈开发工程师 执行中 等待 Codex 完成" [ref=f3e78]:
+              - generic [ref=f3e79]: FD-2203 · 全栈工程师
+              - generic [ref=f3e80]: 创建一个 关于我的页面 区别于之前的 about 新的叫aboutme
+              - paragraph [ref=f3e81]: 没有后端功能。春前端页面里边我是一个全栈开发工程师
+              - generic [ref=f3e82]:
+                - generic [ref=f3e83]: 执行中
+                - generic [ref=f3e84]: 等待 Codex 完成
+          - generic [ref=f3e45]:
+            - generic [ref=f3e46]:
+              - generic [ref=f3e47]: 已完成
+              - generic [ref=f3e48]: "3"
+            - generic [ref=f3e49]:
+              - button "FD-2202 · 前端专家 实现任务详情与删除交互 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。 已完成 验证通过" [ref=f3e50]:
+                - generic [ref=f3e51]: FD-2202 · 前端专家
+                - generic [ref=f3e52]: 实现任务详情与删除交互
+                - paragraph [ref=f3e53]: 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。
+                - generic [ref=f3e54]:
+                  - generic [ref=f3e55]: 已完成
+                  - generic [ref=f3e56]: 验证通过
+              - button "FD-2201 · 前端专家 实现新增与编辑任务表单 提供新增列表内容和编辑既有列表项的前端表单，字段为姓名、性别、年龄。 已完成 验证通过" [ref=f3e57]:
+                - generic [ref=f3e58]: FD-2201 · 前端专家
+                - generic [ref=f3e59]: 实现新增与编辑任务表单
+                - paragraph [ref=f3e60]: 提供新增列表内容和编辑既有列表项的前端表单，字段为姓名、性别、年龄。
+                - generic [ref=f3e61]:
+                  - generic [ref=f3e62]: 已完成
+                  - generic [ref=f3e63]: 验证通过
+              - button "FD-2200 · 前端专家 实现任务列表、查询重置与分页 构建展示姓名、性别、年龄的任务列表页面，支持搜索、重置和分页切换，验证列表浏览与查询操作。 已完成 验证通过" [ref=f3e64]:
+                - generic [ref=f3e65]: FD-2200 · 前端专家
+                - generic [ref=f3e66]: 实现任务列表、查询重置与分页
+                - paragraph [ref=f3e67]: 构建展示姓名、性别、年龄的任务列表页面，支持搜索、重置和分页切换，验证列表浏览与查询操作。
+                - generic [ref=f3e68]:
+                  - generic [ref=f3e69]: 已完成
+                  - generic [ref=f3e70]: 验证通过
+      - generic "拖动调整详情宽度" [ref=f3e85]
+      - complementary [ref=f3e86]:
+        - generic [ref=f3e89]:
+          - generic [ref=f3e90]:
+            - generic [ref=f3e91]:
+              - generic [ref=f3e92]: FD-2202
+              - generic [ref=f3e93]: 已完成
+            - generic [ref=f3e94]:
+              - button "任务更多操作" [ref=f3e95] [cursor=pointer]:
+                - generic [ref=f3e96]: •••
+              - button "关闭任务详情" [ref=f3e97] [cursor=pointer]: ×
+            - heading "实现任务详情与删除交互" [level=2] [ref=f3e98]
+          - generic [ref=f3e99]:
+            - generic [ref=f3e100]:
+              - generic [ref=f3e101]:
+                - text: 版本交付分支
+                - code [ref=f3e102]: flight-deck/release/v0-1-rel-mssu0tsn
+                - text: /Users/fangyuanzhonghe/code/Codex-Flight-Deck-Test/.flight-deck-worktrees/release-rel-mssu0tsn
+              - generic [ref=f3e103]:
+                - button "在编辑器打开" [ref=f3e104] [cursor=pointer]
+                - button "查看代码变更" [active] [ref=f3e106] [cursor=pointer]
+            - generic [ref=f3e108]:
+              - heading "任务说明" [level=3] [ref=f3e109]
+              - paragraph [ref=f3e110]: 提供列表项详情查看及删除操作，验证记录查看和删除后的列表回退规则。
+            - generic [ref=f3e111]:
+              - heading "验收标准" [level=3] [ref=f3e112]
+              - paragraph [ref=f3e113]: 用户可从列表打开详情视图并查看姓名、性别、年龄；用户可删除一条记录；删除成功后保留当前查询条件重新查询静态数据，若当前页无数据且pageNo大于1，则回退至pageNo-1重新查询；pageNo为1时不再回退；每页条数保持不变。
+            - generic [ref=f3e114]:
+              - heading "交付已完成" [level=3] [ref=f3e115]
+              - paragraph [ref=f3e116]: 变更已合并并完成验收。
+            - group [ref=f3e117]:
+              - generic "查看接口、上下文与实施计划 +" [ref=f3e118] [cursor=pointer]
+            - group [ref=f3e119]:
+              - generic "查看完整执行记录（29 个关键节点） +" [ref=f3e120] [cursor=pointer]
+            - generic [ref=f3e121]:
+              - heading "最近动态" [level=3] [ref=f3e123]
+              - list [ref=f3e124]:
+                - listitem [ref=f3e125]:
+                  - time [ref=f3e126]: 2026/8/14 21:15:09
+                  - generic [ref=f3e127]:
+                    - generic [ref=f3e128]: 任务已创建
+                    - text: 等待确认计划并启动 Codex。
+                - listitem [ref=f3e129]:
+                  - time [ref=f3e130]: 2026/8/15 10:50:23
+                  - generic [ref=f3e131]:
+                    - generic [ref=f3e132]: 已合并到目标分支
+                    - text: main
+                - listitem [ref=f3e133]:
+                  - time [ref=f3e134]: 2026/8/15 10:48:54
+                  - generic [ref=f3e135]:
+                    - generic [ref=f3e136]: 项目验证通过
+                    - text: npm run build
+            - generic [ref=f3e137]:
+              - generic [ref=f3e139]:
+                - heading "讨论与修改意见" [level=3] [ref=f3e140]
+                - paragraph [ref=f3e141]: 保存讨论不会重新执行；需要改动时，将同一条意见交给 Codex 增量处理。
+              - textbox "例如：确认列表默认按创建时间倒序；空状态按设计稿展示。" [ref=f3e142]
+              - generic [ref=f3e143]:
+                - button "添加附件" [ref=f3e144] [cursor=pointer]
+                - generic [ref=f3e146]:
+                  - button "仅保存讨论" [disabled] [ref=f3e147]
+                  - button "交给 Codex 增量修改" [disabled] [ref=f3e148]
+  - dialog [ref=f3e149]:
+    - button "关闭变更审阅" [ref=f3e150] [cursor=pointer]: ×
+    - banner [ref=f3e151]:
+      - generic [ref=f3e152]:
+        - generic [ref=f3e153]: 已交付提交 · 代码变更
+        - generic [ref=f3e154]:
+          - heading "实现任务详情与删除交互" [level=2] [ref=f3e155]
+          - generic [ref=f3e156]: 已合并
+        - paragraph [ref=f3e157]:
+          - text: 共 2 个文件 ·
+          - generic [ref=f3e158]: "+177"
+          - text: 新增 ·
+          - generic [ref=f3e159]: −4
+          - text: 删除
+    - generic [ref=f3e160]:
+      - navigation "变更文件" [ref=f3e161]:
+        - button "src/App.tsx +85 −3" [ref=f3e163] [cursor=pointer]:
+          - generic [ref=f3e164]:
+            - generic [ref=f3e165]: ⌑
+            - text: src/App.tsx
+          - generic [ref=f3e166]:
+            - generic [ref=f3e167]: "+85"
+            - generic [ref=f3e168]: −3
+        - button "src/styles.css +92 −1" [ref=f3e169] [cursor=pointer]:
+          - generic [ref=f3e170]:
+            - generic [ref=f3e171]: ⌑
+            - text: src/styles.css
+          - generic [ref=f3e172]:
+            - generic [ref=f3e173]: "+92"
+            - generic [ref=f3e174]: −1
+      - generic "代码变更" [ref=f3e175]:
+        - generic [ref=f3e176]:
+          - generic [ref=f3e177]:
+            - text: src/App.tsx
+            - emphasis [ref=f3e178]: 修改文件
+          - generic [ref=f3e179]: 旧行 / 新行
+        - code [ref=f3e184]: diff --git a/src/App.tsx b/src/App.tsx
+        - code [ref=f3e189]: index 2957631..4fd7e6a 100644
+        - code [ref=f3e194]: "--- a/src/App.tsx"
+        - code [ref=f3e199]: +++ b/src/App.tsx
+        - code [ref=f3e204]: "@@ -43,16 +43,18 @@ const TaskListPage: React.FC = () => {"
+        - generic [ref=f3e205]:
+          - generic [ref=f3e206]: "43"
+          - generic [ref=f3e207]: "43"
+          - code [ref=f3e209]: const [genderInput, setGenderInput] = useState<Gender | ''>('')
+        - generic [ref=f3e210]:
+          - generic [ref=f3e211]: "44"
+          - generic [ref=f3e212]: "44"
+          - code [ref=f3e214]: "const [query, setQuery] = useState({ name: '', gender: '' as Gender | '' })"
+        - generic [ref=f3e215]:
+          - generic [ref=f3e216]: "45"
+          - generic [ref=f3e217]: "45"
+          - code [ref=f3e219]: const [currentPage, setCurrentPage] = useState(1)
+        - generic [ref=f3e220]:
+          - generic [ref=f3e222]: "46"
+          - generic [ref=f3e223]: +
+          - code [ref=f3e224]: const [members, setMembers] = useState(taskMembers)
+        - generic [ref=f3e225]:
+          - generic [ref=f3e227]: "47"
+          - generic [ref=f3e228]: +
+          - code [ref=f3e229]: const [selectedMember, setSelectedMember] = useState<TaskMember | null>(null)
+        - generic [ref=f3e230]:
+          - generic [ref=f3e231]: "46"
+          - generic [ref=f3e232]: "48"
+          - code [ref=f3e234]
+        - generic [ref=f3e235]:
+          - generic [ref=f3e236]: "47"
+          - generic [ref=f3e237]: "49"
+          - code [ref=f3e239]: "const filteredMembers = useMemo(() => {"
+        - generic [ref=f3e240]:
+          - generic [ref=f3e241]: "48"
+          - generic [ref=f3e242]: "50"
+          - code [ref=f3e244]: const normalizedName = query.name.trim()
+        - generic [ref=f3e245]:
+          - generic [ref=f3e246]: "49"
+          - generic [ref=f3e247]: "51"
+          - code [ref=f3e249]
+        - generic [ref=f3e250]:
+          - generic [ref=f3e251]: "50"
+          - generic [ref=f3e253]: −
+          - code [ref=f3e254]: return taskMembers.filter(
+        - generic [ref=f3e255]:
+          - generic [ref=f3e257]: "52"
+          - generic [ref=f3e258]: +
+          - code [ref=f3e259]: return members.filter(
+        - generic [ref=f3e260]:
+          - generic [ref=f3e261]: "51"
+          - generic [ref=f3e262]: "53"
+          - code [ref=f3e264]: (member) =>
+        - generic [ref=f3e265]:
+          - generic [ref=f3e266]: "52"
+          - generic [ref=f3e267]: "54"
+          - code [ref=f3e269]: (!normalizedName || member.name.includes(normalizedName)) &&
+        - generic [ref=f3e270]:
+          - generic [ref=f3e271]: "53"
+          - generic [ref=f3e272]: "55"
+          - code [ref=f3e274]: (!query.gender || member.gender === query.gender),
+        - generic [ref=f3e275]:
+          - generic [ref=f3e276]: "54"
+          - generic [ref=f3e277]: "56"
+          - code [ref=f3e279]: )
+        - generic [ref=f3e280]:
+          - generic [ref=f3e281]: "55"
+          - generic [ref=f3e283]: −
+          - code [ref=f3e284]: "}, [query])"
+        - generic [ref=f3e285]:
+          - generic [ref=f3e287]: "57"
+          - generic [ref=f3e288]: +
+          - code [ref=f3e289]: "}, [members, query])"
+        - generic [ref=f3e290]:
+          - generic [ref=f3e291]: "56"
+          - generic [ref=f3e292]: "58"
+          - code [ref=f3e294]
+        - generic [ref=f3e295]:
+          - generic [ref=f3e296]: "57"
+          - generic [ref=f3e297]: "59"
+          - code [ref=f3e299]: const pageCount = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE))
+        - generic [ref=f3e300]:
+          - generic [ref=f3e301]: "58"
+          - generic [ref=f3e302]: "60"
+          - code [ref=f3e304]: const visibleMembers = filteredMembers.slice(
+        - code [ref=f3e309]: "@@ -73,6 +75,27 @@ const TaskListPage: React.FC = () => {"
+        - generic [ref=f3e310]:
+          - generic [ref=f3e311]: "73"
+          - generic [ref=f3e312]: "75"
+          - code [ref=f3e314]: setCurrentPage(1)
+        - generic [ref=f3e315]:
+          - generic [ref=f3e316]: "74"
+          - generic [ref=f3e317]: "76"
+          - code [ref=f3e319]: "}"
+        - generic [ref=f3e320]:
+          - generic [ref=f3e321]: "75"
+          - generic [ref=f3e322]: "77"
+          - code [ref=f3e324]
+        - generic [ref=f3e325]:
+          - generic [ref=f3e327]: "78"
+          - generic [ref=f3e328]: +
+          - code [ref=f3e329]: "const handleDelete = (memberId: number) => {"
+        - generic [ref=f3e330]:
+          - generic [ref=f3e332]: "79"
+          - generic [ref=f3e333]: +
+          - code [ref=f3e334]: const remainingMembers = members.filter((member) => member.id !== memberId)
+        - generic [ref=f3e335]:
+          - generic [ref=f3e337]: "80"
+          - generic [ref=f3e338]: +
+          - code [ref=f3e339]: const normalizedName = query.name.trim()
+        - generic [ref=f3e340]:
+          - generic [ref=f3e342]: "81"
+          - generic [ref=f3e343]: +
+          - code [ref=f3e344]: const remainingFilteredMembers = remainingMembers.filter(
+        - generic [ref=f3e345]:
+          - generic [ref=f3e347]: "82"
+          - generic [ref=f3e348]: +
+          - code [ref=f3e349]: (member) =>
+        - generic [ref=f3e350]:
+          - generic [ref=f3e352]: "83"
+          - generic [ref=f3e353]: +
+          - code [ref=f3e354]: (!normalizedName || member.name.includes(normalizedName)) &&
+        - generic [ref=f3e355]:
+          - generic [ref=f3e357]: "84"
+          - generic [ref=f3e358]: +
+          - code [ref=f3e359]: (!query.gender || member.gender === query.gender),
+        - generic [ref=f3e360]:
+          - generic [ref=f3e362]: "85"
+          - generic [ref=f3e363]: +
+          - code [ref=f3e364]: )
+        - generic [ref=f3e365]:
+          - generic [ref=f3e367]: "86"
+          - generic [ref=f3e368]: +
+          - code [ref=f3e369]: const remainingCurrentPageMembers = remainingFilteredMembers.slice(
+        - generic [ref=f3e370]:
+          - generic [ref=f3e372]: "87"
+          - generic [ref=f3e373]: +
+          - code [ref=f3e374]: (currentPage - 1) * PAGE_SIZE,
+        - generic [ref=f3e375]:
+          - generic [ref=f3e377]: "88"
+          - generic [ref=f3e378]: +
+          - code [ref=f3e379]: currentPage * PAGE_SIZE,
+        - generic [ref=f3e380]:
+          - generic [ref=f3e382]: "89"
+          - generic [ref=f3e383]: +
+          - code [ref=f3e384]: )
+        - generic [ref=f3e385]:
+          - generic [ref=f3e387]: "90"
+          - generic [ref=f3e388]: +
+          - code [ref=f3e389]
+        - generic [ref=f3e390]:
+          - generic [ref=f3e392]: "91"
+          - generic [ref=f3e393]: +
+          - code [ref=f3e394]: setMembers(remainingMembers)
+        - generic [ref=f3e395]:
+          - generic [ref=f3e397]: "92"
+          - generic [ref=f3e398]: +
+          - code [ref=f3e399]: "setSelectedMember((member) => (member?.id === memberId ? null : member))"
+        - generic [ref=f3e400]:
+          - generic [ref=f3e402]: "93"
+          - generic [ref=f3e403]: +
+          - code [ref=f3e404]
+        - generic [ref=f3e405]:
+          - generic [ref=f3e407]: "94"
+          - generic [ref=f3e408]: +
+          - code [ref=f3e409]: "if (remainingCurrentPageMembers.length === 0 && currentPage > 1) {"
+        - generic [ref=f3e410]:
+          - generic [ref=f3e412]: "95"
+          - generic [ref=f3e413]: +
+          - code [ref=f3e414]: setCurrentPage((page) => page - 1)
+        - generic [ref=f3e415]:
+          - generic [ref=f3e417]: "96"
+          - generic [ref=f3e418]: +
+          - code [ref=f3e419]: "}"
+        - generic [ref=f3e420]:
+          - generic [ref=f3e422]: "97"
+          - generic [ref=f3e423]: +
+          - code [ref=f3e424]: "}"
+        - generic [ref=f3e425]:
+          - generic [ref=f3e427]: "98"
+          - generic [ref=f3e428]: +
+          - code [ref=f3e429]
+        - generic [ref=f3e430]:
+          - generic [ref=f3e431]: "76"
+          - generic [ref=f3e432]: "99"
+          - code [ref=f3e434]: return (
+        - generic [ref=f3e435]:
+          - generic [ref=f3e436]: "77"
+          - generic [ref=f3e437]: "100"
+          - code [ref=f3e439]: <main className="task-page">
+        - generic [ref=f3e440]:
+          - generic [ref=f3e441]: "78"
+          - generic [ref=f3e442]: "101"
+          - code [ref=f3e444]: <section className="task-panel" aria-labelledby="task-list-title">
+        - code [ref=f3e449]: "@@ -120,6 +143,7 @@ const TaskListPage: React.FC = () => {"
+        - generic [ref=f3e450]:
+          - generic [ref=f3e451]: "120"
+          - generic [ref=f3e452]: "143"
+          - code [ref=f3e454]: <th scope="col">姓名</th>
+        - generic [ref=f3e455]:
+          - generic [ref=f3e456]: "121"
+          - generic [ref=f3e457]: "144"
+          - code [ref=f3e459]: <th scope="col">性别</th>
+        - generic [ref=f3e460]:
+          - generic [ref=f3e461]: "122"
+          - generic [ref=f3e462]: "145"
+          - code [ref=f3e464]: <th scope="col">年龄</th>
+        - generic [ref=f3e465]:
+          - generic [ref=f3e467]: "146"
+          - generic [ref=f3e468]: +
+          - code [ref=f3e469]: <th scope="col">操作</th>
+        - generic [ref=f3e470]:
+          - generic [ref=f3e471]: "123"
+          - generic [ref=f3e472]: "147"
+          - code [ref=f3e474]: </tr>
+        - generic [ref=f3e475]:
+          - generic [ref=f3e476]: "124"
+          - generic [ref=f3e477]: "148"
+          - code [ref=f3e479]: </thead>
+        - generic [ref=f3e480]:
+          - generic [ref=f3e481]: "125"
+          - generic [ref=f3e482]: "149"
+          - code [ref=f3e484]: <tbody>
+        - code [ref=f3e489]: "@@ -129,11 +153,29 @@ const TaskListPage: React.FC = () => {"
+        - generic [ref=f3e490]:
+          - generic [ref=f3e491]: "129"
+          - generic [ref=f3e492]: "153"
+          - code [ref=f3e494]: "<td>{member.name}</td>"
+        - generic [ref=f3e495]:
+          - generic [ref=f3e496]: "130"
+          - generic [ref=f3e497]: "154"
+          - code [ref=f3e499]: "<td>{member.gender}</td>"
+        - generic [ref=f3e500]:
+          - generic [ref=f3e501]: "131"
+          - generic [ref=f3e502]: "155"
+          - code [ref=f3e504]: "<td>{member.age}</td>"
+        - generic [ref=f3e505]:
+          - generic [ref=f3e507]: "156"
+          - generic [ref=f3e508]: +
+          - code [ref=f3e509]: <td>
+        - generic [ref=f3e510]:
+          - generic [ref=f3e512]: "157"
+          - generic [ref=f3e513]: +
+          - code [ref=f3e514]: <div className="row-actions">
+        - generic [ref=f3e515]:
+          - generic [ref=f3e517]: "158"
+          - generic [ref=f3e518]: +
+          - code [ref=f3e519]: <button
+        - generic [ref=f3e520]:
+          - generic [ref=f3e522]: "159"
+          - generic [ref=f3e523]: +
+          - code [ref=f3e524]: className="text-button"
+        - generic [ref=f3e525]:
+          - generic [ref=f3e527]: "160"
+          - generic [ref=f3e528]: +
+          - code [ref=f3e529]: "onClick={() => setSelectedMember(member)}"
+        - generic [ref=f3e530]:
+          - generic [ref=f3e532]: "161"
+          - generic [ref=f3e533]: +
+          - code [ref=f3e534]: type="button"
+        - generic [ref=f3e535]:
+          - generic [ref=f3e537]: "162"
+          - generic [ref=f3e538]: +
+          - code [ref=f3e539]: ">"
+        - generic [ref=f3e540]:
+          - generic [ref=f3e542]: "163"
+          - generic [ref=f3e543]: +
+          - code [ref=f3e544]: 查看详情
+        - generic [ref=f3e545]:
+          - generic [ref=f3e547]: "164"
+          - generic [ref=f3e548]: +
+          - code [ref=f3e549]: </button>
+        - generic [ref=f3e550]:
+          - generic [ref=f3e552]: "165"
+          - generic [ref=f3e553]: +
+          - code [ref=f3e554]: <button
+        - generic [ref=f3e555]:
+          - generic [ref=f3e557]: "166"
+          - generic [ref=f3e558]: +
+          - code [ref=f3e559]: className="text-button danger-button"
+        - generic [ref=f3e560]:
+          - generic [ref=f3e562]: "167"
+          - generic [ref=f3e563]: +
+          - code [ref=f3e564]: "onClick={() => handleDelete(member.id)}"
+        - generic [ref=f3e565]:
+          - generic [ref=f3e567]: "168"
+          - generic [ref=f3e568]: +
+          - code [ref=f3e569]: type="button"
+        - generic [ref=f3e570]:
+          - generic [ref=f3e572]: "169"
+          - generic [ref=f3e573]: +
+          - code [ref=f3e574]: ">"
+        - generic [ref=f3e575]:
+          - generic [ref=f3e577]: "170"
+          - generic [ref=f3e578]: +
+          - code [ref=f3e579]: 删除
+        - generic [ref=f3e580]:
+          - generic [ref=f3e582]: "171"
+          - generic [ref=f3e583]: +
+          - code [ref=f3e584]: </button>
+        - generic [ref=f3e585]:
+          - generic [ref=f3e587]: "172"
+          - generic [ref=f3e588]: +
+          - code [ref=f3e589]: </div>
+        - generic [ref=f3e590]:
+          - generic [ref=f3e592]: "173"
+          - generic [ref=f3e593]: +
+          - code [ref=f3e594]: </td>
+        - generic [ref=f3e595]:
+          - generic [ref=f3e596]: "132"
+          - generic [ref=f3e597]: "174"
+          - code [ref=f3e599]: </tr>
+        - generic [ref=f3e600]:
+          - generic [ref=f3e601]: "133"
+          - generic [ref=f3e602]: "175"
+          - code [ref=f3e604]: ))
+        - generic [ref=f3e605]:
+          - generic [ref=f3e606]: "134"
+          - generic [ref=f3e607]: "176"
+          - code [ref=f3e609]: ") : ("
+        - generic [ref=f3e610]:
+          - generic [ref=f3e611]: "135"
+          - generic [ref=f3e612]: "177"
+          - code [ref=f3e614]: <tr>
+        - generic [ref=f3e615]:
+          - generic [ref=f3e616]: "136"
+          - generic [ref=f3e618]: −
+          - code [ref=f3e619]: "<td className=\"empty-state\" colSpan={3}>暂无匹配的数据</td>"
+        - generic [ref=f3e620]:
+          - generic [ref=f3e622]: "178"
+          - generic [ref=f3e623]: +
+          - code [ref=f3e624]: "<td className=\"empty-state\" colSpan={4}>暂无匹配的数据</td>"
+        - generic [ref=f3e625]:
+          - generic [ref=f3e626]: "137"
+          - generic [ref=f3e627]: "179"
+          - code [ref=f3e629]: </tr>
+        - generic [ref=f3e630]:
+          - generic [ref=f3e631]: "138"
+          - generic [ref=f3e632]: "180"
+          - code [ref=f3e634]: ")}"
+        - generic [ref=f3e635]:
+          - generic [ref=f3e636]: "139"
+          - generic [ref=f3e637]: "181"
+          - code [ref=f3e639]: </tbody>
+        - code [ref=f3e644]: "@@ -176,6 +218,46 @@ const TaskListPage: React.FC = () => {"
+        - generic [ref=f3e645]:
+          - generic [ref=f3e646]: "176"
+          - generic [ref=f3e647]: "218"
+          - code [ref=f3e649]: </div>
+        - generic [ref=f3e650]:
+          - generic [ref=f3e651]: "177"
+          - generic [ref=f3e652]: "219"
+          - code [ref=f3e654]: </footer>
+        - generic [ref=f3e655]:
+          - generic [ref=f3e656]: "178"
+          - generic [ref=f3e657]: "220"
+          - code [ref=f3e659]: </section>
+        - generic [ref=f3e660]:
+          - generic [ref=f3e662]: "221"
+          - generic [ref=f3e663]: +
+          - code [ref=f3e664]
+        - generic [ref=f3e665]:
+          - generic [ref=f3e667]: "222"
+          - generic [ref=f3e668]: +
+          - code [ref=f3e669]: "{selectedMember && ("
+        - generic [ref=f3e670]:
+          - generic [ref=f3e672]: "223"
+          - generic [ref=f3e673]: +
+          - code [ref=f3e674]: <div className="dialog-backdrop" role="presentation">
+        - generic [ref=f3e675]:
+          - generic [ref=f3e677]: "224"
+          - generic [ref=f3e678]: +
+          - code [ref=f3e679]: <section
+        - generic [ref=f3e680]:
+          - generic [ref=f3e682]: "225"
+          - generic [ref=f3e683]: +
+          - code [ref=f3e684]: aria-labelledby="member-detail-title"
+        - generic [ref=f3e685]:
+          - generic [ref=f3e687]: "226"
+          - generic [ref=f3e688]: +
+          - code [ref=f3e689]: aria-modal="true"
+        - generic [ref=f3e690]:
+          - generic [ref=f3e692]: "227"
+          - generic [ref=f3e693]: +
+          - code [ref=f3e694]: className="detail-dialog"
+        - generic [ref=f3e695]:
+          - generic [ref=f3e697]: "228"
+          - generic [ref=f3e698]: +
+          - code [ref=f3e699]: role="dialog"
+        - generic [ref=f3e700]:
+          - generic [ref=f3e702]: "229"
+          - generic [ref=f3e703]: +
+          - code [ref=f3e704]: ">"
+        - generic [ref=f3e705]:
+          - generic [ref=f3e707]: "230"
+          - generic [ref=f3e708]: +
+          - code [ref=f3e709]: <div className="dialog-header">
+        - generic [ref=f3e710]:
+          - generic [ref=f3e712]: "231"
+          - generic [ref=f3e713]: +
+          - code [ref=f3e714]: <h2 id="member-detail-title">成员详情</h2>
+        - generic [ref=f3e715]:
+          - generic [ref=f3e717]: "232"
+          - generic [ref=f3e718]: +
+          - code [ref=f3e719]: <button
+        - generic [ref=f3e720]:
+          - generic [ref=f3e722]: "233"
+          - generic [ref=f3e723]: +
+          - code [ref=f3e724]: aria-label="关闭详情"
+        - generic [ref=f3e725]:
+          - generic [ref=f3e727]: "234"
+          - generic [ref=f3e728]: +
+          - code [ref=f3e729]: className="close-button"
+        - generic [ref=f3e730]:
+          - generic [ref=f3e732]: "235"
+          - generic [ref=f3e733]: +
+          - code [ref=f3e734]: "onClick={() => setSelectedMember(null)}"
+        - generic [ref=f3e735]:
+          - generic [ref=f3e737]: "236"
+          - generic [ref=f3e738]: +
+          - code [ref=f3e739]: type="button"
+        - generic [ref=f3e740]:
+          - generic [ref=f3e742]: "237"
+          - generic [ref=f3e743]: +
+          - code [ref=f3e744]: ">"
+        - generic [ref=f3e745]:
+          - generic [ref=f3e747]: "238"
+          - generic [ref=f3e748]: +
+          - code [ref=f3e749]: ×
+        - generic [ref=f3e750]:
+          - generic [ref=f3e752]: "239"
+          - generic [ref=f3e753]: +
+          - code [ref=f3e754]: </button>
+        - generic [ref=f3e755]:
+          - generic [ref=f3e757]: "240"
+          - generic [ref=f3e758]: +
+          - code [ref=f3e759]: </div>
+        - generic [ref=f3e760]:
+          - generic [ref=f3e762]: "241"
+          - generic [ref=f3e763]: +
+          - code [ref=f3e764]: <dl className="member-details">
+        - generic [ref=f3e765]:
+          - generic [ref=f3e767]: "242"
+          - generic [ref=f3e768]: +
+          - code [ref=f3e769]: <div>
+        - generic [ref=f3e770]:
+          - generic [ref=f3e772]: "243"
+          - generic [ref=f3e773]: +
+          - code [ref=f3e774]: <dt>姓名</dt>
+        - generic [ref=f3e775]:
+          - generic [ref=f3e777]: "244"
+          - generic [ref=f3e778]: +
+          - code [ref=f3e779]: "<dd>{selectedMember.name}</dd>"
+        - generic [ref=f3e780]:
+          - generic [ref=f3e782]: "245"
+          - generic [ref=f3e783]: +
+          - code [ref=f3e784]: </div>
+        - generic [ref=f3e785]:
+          - generic [ref=f3e787]: "246"
+          - generic [ref=f3e788]: +
+          - code [ref=f3e789]: <div>
+        - generic [ref=f3e790]:
+          - generic [ref=f3e792]: "247"
+          - generic [ref=f3e793]: +
+          - code [ref=f3e794]: <dt>性别</dt>
+        - generic [ref=f3e795]:
+          - generic [ref=f3e797]: "248"
+          - generic [ref=f3e798]: +
+          - code [ref=f3e799]: "<dd>{selectedMember.gender}</dd>"
+        - generic [ref=f3e800]:
+          - generic [ref=f3e802]: "249"
+          - generic [ref=f3e803]: +
+          - code [ref=f3e804]: </div>
+        - generic [ref=f3e805]:
+          - generic [ref=f3e807]: "250"
+          - generic [ref=f3e808]: +
+          - code [ref=f3e809]: <div>
+        - generic [ref=f3e810]:
+          - generic [ref=f3e812]: "251"
+          - generic [ref=f3e813]: +
+          - code [ref=f3e814]: <dt>年龄</dt>
+        - generic [ref=f3e815]:
+          - generic [ref=f3e817]: "252"
+          - generic [ref=f3e818]: +
+          - code [ref=f3e819]: "<dd>{selectedMember.age}</dd>"
+        - generic [ref=f3e820]:
+          - generic [ref=f3e822]: "253"
+          - generic [ref=f3e823]: +
+          - code [ref=f3e824]: </div>
+        - generic [ref=f3e825]:
+          - generic [ref=f3e827]: "254"
+          - generic [ref=f3e828]: +
+          - code [ref=f3e829]: </dl>
+        - generic [ref=f3e830]:
+          - generic [ref=f3e832]: "255"
+          - generic [ref=f3e833]: +
+          - code [ref=f3e834]: <div className="dialog-actions">
+        - generic [ref=f3e835]:
+          - generic [ref=f3e837]: "256"
+          - generic [ref=f3e838]: +
+          - code [ref=f3e839]: "<button onClick={() => setSelectedMember(null)} type=\"button\">关闭</button>"
+        - generic [ref=f3e840]:
+          - generic [ref=f3e842]: "257"
+          - generic [ref=f3e843]: +
+          - code [ref=f3e844]: </div>
+        - generic [ref=f3e845]:
+          - generic [ref=f3e847]: "258"
+          - generic [ref=f3e848]: +
+          - code [ref=f3e849]: </section>
+        - generic [ref=f3e850]:
+          - generic [ref=f3e852]: "259"
+          - generic [ref=f3e853]: +
+          - code [ref=f3e854]: </div>
+        - generic [ref=f3e855]:
+          - generic [ref=f3e857]: "260"
+          - generic [ref=f3e858]: +
+          - code [ref=f3e859]: ")}"
+        - generic [ref=f3e860]:
+          - generic [ref=f3e861]: "179"
+          - generic [ref=f3e862]: "261"
+          - code [ref=f3e864]: </main>
+        - generic [ref=f3e865]:
+          - generic [ref=f3e866]: "180"
+          - generic [ref=f3e867]: "262"
+          - code [ref=f3e869]: )
+        - generic [ref=f3e870]:
+          - generic [ref=f3e871]: "181"
+          - generic [ref=f3e872]: "263"
+          - code [ref=f3e874]: "}"
+    - contentinfo [ref=f3e875]:
+      - button "继续检查" [ref=f3e876] [cursor=pointer]
+      - button "确认合并到 main" [ref=f3e877] [cursor=pointer]

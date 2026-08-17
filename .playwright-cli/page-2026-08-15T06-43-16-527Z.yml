@@ -1,0 +1,42 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - button "正在读取项目…" [ref=e6] [cursor=pointer]
+    - generic [ref=e8]:
+      - tablist [ref=e9]:
+        - generic [ref=e11]:
+          - tab "任务" [selected] [ref=e13] [cursor=pointer]
+          - tab [ref=e15] [cursor=pointer]:
+            - generic [ref=e16]:
+              - text: 版本
+              - superscript [ref=e18]: "0"
+          - tab [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - text: 复核
+              - superscript [ref=e23]: "0"
+      - generic:
+        - generic:
+          - tabpanel "任务"
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - heading "任务 0" [level=1] [ref=e28]
+          - paragraph [ref=e29]: 把需求变成可验证的 Codex 交付。
+        - generic [ref=e30]:
+          - group "任务展示方式" [ref=e31]:
+            - button "看板" [ref=e32] [cursor=pointer]
+            - button "列表" [ref=e33] [cursor=pointer]
+          - button "显示空阶段" [ref=e34] [cursor=pointer]
+          - button "+ 新建交付" [ref=e35] [cursor=pointer]
+          - button "⚡ 快速任务" [ref=e36] [cursor=pointer]
+          - button "▷ 执行队列 · 0/2" [ref=e37] [cursor=pointer]
+          - button "全部状态 ⌄" [ref=e39] [cursor=pointer]:
+            - text: 全部状态
+            - generic [ref=e41]: ⌄
+      - generic "任务看板" [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - generic [ref=e45]: 待澄清
+            - generic [ref=e46]: "0"
+          - generic [ref=e47]: 暂无任务
+      - generic [ref=e49]: 没有匹配的任务
